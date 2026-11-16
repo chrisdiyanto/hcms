@@ -22,6 +22,7 @@ final class HcmsModules
 
     /** Menu induk (tanpa modul) */
     private const PARENTS = [
+        'kepegawaian' => ['name' => 'Kepegawaian', 'id' => 'Kepegawaian', 'icon' => 'fa fa-users', 'position' => 'sidebar'],
         'organisasi' => ['name' => 'Organisasi', 'id' => 'Organisasi', 'icon' => 'fa fa-sitemap', 'position' => 'sidebar'],
     ];
 
@@ -50,6 +51,10 @@ final class HcmsModules
                 'access' => $hrManage + $orgRead],
             'positions' => ['title' => 'Posisi', 'table' => 'positions', 'url' => 'organization/positions', 'parent' => 'organisasi', 'icon' => 'fa fa-user-tie', 'title_id' => 'Posisi',
                 'access' => $hrManage + $orgRead],
+
+            // Employee Management — isi daftar tetap dibatasi data scope tiap peran
+            'employees' => ['title' => 'Pegawai', 'table' => 'employees', 'url' => 'employees', 'parent' => 'kepegawaian', 'icon' => 'fa fa-id-card', 'title_id' => 'Pegawai',
+                'access' => $hrManage + $orgRead + [Roles::LINE_MANAGER => self::READ, Roles::EMPLOYEE => self::READ]],
         ];
     }
 
@@ -77,12 +82,21 @@ final class HcmsModules
     {
         $ids = [];
         foreach (self::PARENTS as $key => $parent) {
+            // Menu induk terlihat oleh semua peran yang boleh membuka salah satu anaknya
+            $roles = [];
+            foreach (self::definitions() as $def) {
+                if ($def['parent'] === $key) {
+                    $roles = array_merge($roles, array_keys($def['access']));
+                }
+            }
+            $roles = array_values(array_unique($roles));
+
             $ids[$key] = (int) (DB::table('tb_menu')->where('menu_name', $parent['name'])->where('parent_id', 0)->value('menu_id')
                 ?: DB::table('tb_menu')->insertGetId([
                     'parent_id' => 0, 'module' => '', 'url' => '', 'menu_name' => $parent['name'], 'menu_type' => 'internal',
                     'role_id' => '', 'deep' => 0, 'ordering' => (int) DB::table('tb_menu')->where('parent_id', 0)->max('ordering') + 1,
                     'position' => $parent['position'], 'menu_icons' => $parent['icon'], 'active' => '1',
-                    'access_data' => json_encode(self::menuAccess(array_keys(self::definitions()['jobfamilies']['access']))),
+                    'access_data' => json_encode(self::menuAccess($roles)),
                     'allow_guest' => '0', 'menu_lang' => json_encode(['title' => ['en' => $parent['name'], 'id' => $parent['id']]]),
                 ]));
         }
