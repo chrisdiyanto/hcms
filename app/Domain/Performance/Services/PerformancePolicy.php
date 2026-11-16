@@ -33,6 +33,23 @@ final class PerformancePolicy
         'prorata' => ['min_segment_days' => 90, 'min_rated_days' => 90],
         'range_penalty' => 1,
         'milestone_late_penalty' => 0.25,
+        // Perilaku kerja & nilai inti (How), dinilai 1–5 dengan indikator perilaku (blueprint 8.4)
+        'how_items' => [
+            ['code' => 'INT', 'label' => 'Integritas', 'description' => 'Jujur, konsisten antara ucapan dan tindakan, mematuhi aturan'],
+            ['code' => 'KOL', 'label' => 'Kolaborasi', 'description' => 'Bekerja sama lintas fungsi, berbagi informasi, mendukung rekan'],
+            ['code' => 'PEL', 'label' => 'Orientasi pelanggan', 'description' => 'Memahami kebutuhan pelanggan internal/eksternal dan menindaklanjutinya'],
+            ['code' => 'INO', 'label' => 'Inovasi', 'description' => 'Mengusulkan dan menerapkan cara kerja yang lebih baik'],
+            ['code' => 'AKT', 'label' => 'Akuntabilitas', 'description' => 'Bertanggung jawab atas hasil kerja dan komitmen'],
+        ],
+        // Dimensi ketiga (ADR 0001 no. 8): inisiatif, proyek lintas unit, tugas di luar KPI
+        'contribution_rubric' => [
+            1 => 'Tidak ada kontribusi di luar KPI',
+            2 => 'Kontribusi kecil dan insidental',
+            3 => 'Aktif dalam satu inisiatif/proyek di luar KPI',
+            4 => 'Memimpin inisiatif atau berdampak nyata bagi unit lain',
+            5 => 'Kontribusi luar biasa yang berdampak luas bagi organisasi',
+        ],
+        'appeal_days' => 14,
     ];
 
     public const DIMENSIONS = ['what' => 'Kinerja (KPI)', 'how' => 'Perilaku (How)', 'contribution' => 'Kontribusi tambahan'];
@@ -150,6 +167,16 @@ final class PerformancePolicy
         if (count($mins) !== count(array_unique($mins)) || ! in_array(0.0, array_map('floatval', $mins), true)) {
             $p[] = 'Batas band rating harus unik dan salah satunya 0.';
         }
+        $howItems = $c['how_items'] ?? [];
+        if ((float) $c['weights']['how'] > 0 && $howItems === []) {
+            $p[] = 'Bobot Perilaku > 0 tetapi belum ada item perilaku (How).';
+        }
+        if (count($howItems) !== count(array_unique(array_column($howItems, 'code')))) {
+            $p[] = 'Kode item perilaku harus unik.';
+        }
+        if (($c['appeal_days'] ?? 14) < 1 || ($c['appeal_days'] ?? 14) > 60) {
+            $p[] = 'Jendela keberatan harus 1–60 hari.';
+        }
 
         return $p;
     }
@@ -160,7 +187,7 @@ final class PerformancePolicy
         $input = $c;
         $c = array_replace_recursive(self::DEFAULTS, array_intersect_key($c, self::DEFAULTS));
         // Daftar diganti utuh (bukan digabung per indeks dengan default)
-        foreach (['bands', 'weight_overrides'] as $list) {
+        foreach (['bands', 'weight_overrides', 'how_items'] as $list) {
             if (array_key_exists($list, $input)) {
                 $c[$list] = (array) $input[$list];
             }
@@ -179,6 +206,11 @@ final class PerformancePolicy
         $c['prorata'] = array_map('intval', $c['prorata']);
         $c['range_penalty'] = $num($c['range_penalty']);
         $c['milestone_late_penalty'] = min(max($num($c['milestone_late_penalty']), 0), 1);
+        $c['how_items'] = array_values(array_map(fn ($h) => [
+            'code' => Str::upper(Str::slug(($h['code'] ?? '') ?: $h['label'], '_')), 'label' => trim($h['label']), 'description' => trim((string) ($h['description'] ?? '')),
+        ], array_filter($c['how_items'], fn ($h) => trim((string) ($h['label'] ?? '')) !== '')));
+        $c['contribution_rubric'] = array_combine([1, 2, 3, 4, 5], array_map(fn ($v) => trim((string) $v), array_slice(array_values($c['contribution_rubric']), 0, 5)));
+        $c['appeal_days'] = (int) $c['appeal_days'];
 
         return $c;
     }
@@ -188,10 +220,16 @@ final class PerformancePolicy
         return array_column($config['bands'], 'label', 'code');
     }
 
+    /** Konfigurasi periode lama dilengkapi kunci yang ditambahkan di versi berikutnya. */
+    public static function withDefaults(array $config): array
+    {
+        return $config + array_diff_key(self::DEFAULTS, $config);
+    }
+
     private function decode(?object $row): ?object
     {
         if ($row) {
-            $row->config = json_decode((string) $row->config, true);
+            $row->config = self::withDefaults(json_decode((string) $row->config, true));
         }
 
         return $row;

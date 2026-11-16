@@ -13,6 +13,17 @@
 		@elseif($canApprove && $period->status === 'monitoring')
 			<form method="POST" action="{{ url('performance/periods/'.$period->id.'/advance') }}" onsubmit="return confirm('Akhiri monitoring dan mulai tahap penilaian? Semua mid-year review harus sudah selesai.')">
 				@csrf<button class="btn btn-sm btn-outline-primary" type="submit">Mulai tahap penilaian</button></form>
+		@elseif($canApprove && $period->status === 'assessment')
+			<form method="POST" action="{{ url('performance/periods/'.$period->id.'/advance') }}" onsubmit="return confirm('Akhiri tahap penilaian dan mulai kalibrasi? Semua penilaian harus sudah selesai.')">
+				@csrf<button class="btn btn-sm btn-outline-primary" type="submit">Mulai tahap kalibrasi</button></form>
+		@elseif($period->status === 'calibration')
+			<a href="{{ url('performance/periods/'.$period->id.'/calibration') }}" class="btn btn-sm btn-outline-primary">Sesi kalibrasi</a>
+			@if($canApprove)
+				<form method="POST" action="{{ url('performance/periods/'.$period->id.'/publish') }}" onsubmit="return confirm('Sahkan dan umumkan rating? Periode akan ditutup dan snapshot permanen dibuat.')">
+					@csrf<button class="btn btn-sm btn-success" type="submit">Sahkan &amp; umumkan rating</button></form>
+			@endif
+		@elseif($period->status === 'closed')
+			<a href="{{ url('performance/periods/'.$period->id.'/ratings') }}" class="btn btn-sm btn-outline-primary">Rating kinerja</a>
 		@endif
 		<a href="{{ url('performance/periods') }}" class="btn btn-sm btn-outline-secondary">Kembali</a>
 	</div>
@@ -111,7 +122,8 @@
 						<td class="small">{{ $p->position_title ?: '—' }}</td>
 						<td><span class="badge {{ ['approved' => 'bg-success', 'submitted' => 'bg-info', 'returned' => 'bg-warning text-dark', 'draft' => 'bg-light text-dark'][$p->status] ?? 'bg-secondary' }}">{{ $planStatuses[$p->status] ?? 'Belum dibuat' }}</span></td>
 						<td class="small">{{ $p->submitted_at ?: '—' }}
-							@if($p->status === 'approved' && !in_array($period->status, ['draft', 'planning']))<a href="{{ url('performance/plans/'.$p->plan_id.'/monitoring') }}" class="ms-1">monitoring</a>@endif</td></tr>
+							@if($p->status === 'approved' && !in_array($period->status, ['draft', 'planning']))<a href="{{ url('performance/plans/'.$p->plan_id.'/monitoring') }}" class="ms-1">monitoring</a>@endif
+							@if($p->status === 'approved' && in_array($period->status, ['assessment', 'calibration', 'closed']))<a href="{{ url('performance/assessments/'.$p->plan_id) }}" class="ms-1">penilaian</a>@endif</td></tr>
 				@empty
 					<tr><td colspan="4" class="text-muted">Tidak ada pegawai dalam cakupan data Anda.</td></tr>
 				@endforelse

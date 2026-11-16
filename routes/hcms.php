@@ -75,6 +75,26 @@ Route::post('performance/checkins/{checkin}/complete', 'Performance\MonitoringCo
 Route::get('performance/plans/{plan}/change-request', 'Performance\MonitoringController@changeForm')->whereNumber('plan');
 Route::post('performance/plans/{plan}/change-request', 'Performance\MonitoringController@submitChange')->whereNumber('plan');
 Route::get('performance/team', 'Performance\TeamController@index');
+Route::get('performance/assessments', 'Performance\EvaluationController@index');
+Route::get('performance/assessments/{plan}', 'Performance\EvaluationController@show')->whereNumber('plan');
+Route::post('performance/assessments/{plan}/self', 'Performance\EvaluationController@saveSelf')->whereNumber('plan');
+Route::post('performance/assessments/{plan}/manager', 'Performance\EvaluationController@saveManager')->whereNumber('plan');
+Route::post('performance/assessments/{plan}/review', 'Performance\EvaluationController@review')->whereNumber('plan');
+Route::get('performance/periods/{period}/calibration', 'Performance\CalibrationController@index')->whereNumber('period');
+Route::post('performance/periods/{period}/calibration', 'Performance\CalibrationController@store')->whereNumber('period');
+Route::get('performance/calibration/sessions/{session}', 'Performance\CalibrationController@show')->whereNumber('session');
+Route::post('performance/calibration/sessions/{session}/move', 'Performance\CalibrationController@move')->whereNumber('session');
+Route::post('performance/calibration/sessions/{session}/close', 'Performance\CalibrationController@close')->whereNumber('session');
+Route::post('performance/periods/{period}/publish', 'Performance\RatingsController@publish')->whereNumber('period');
+Route::get('performance/periods/{period}/ratings', 'Performance\RatingsController@periodRatings')->whereNumber('period');
+Route::get('performance/my-ratings', 'Performance\RatingsController@mine');
+Route::post('performance/ratings/{rating}/appeal', 'Performance\RatingsController@appeal')->whereNumber('rating')->middleware('throttle:5,1,appeals');
+Route::get('performance/appeals', 'Performance\RatingsController@appeals');
+Route::post('performance/appeals/{appeal}/decide', 'Performance\RatingsController@decide')->whereNumber('appeal');
+Route::get('performance/pips', 'Performance\PipController@index');
+Route::post('performance/pips', 'Performance\PipController@store');
+Route::post('performance/pips/{pip}/close', 'Performance\PipController@close')->whereNumber('pip');
+Route::get('performance/dashboard', 'Performance\DashboardController@index');
 
 Route::get('competency/reports','Competency\ReportsController@index');
 Route::get('competency/reports/employees/{employee}', 'Competency\ReportsController@employee')->whereNumber('employee');

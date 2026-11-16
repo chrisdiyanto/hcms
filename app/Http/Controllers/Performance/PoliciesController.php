@@ -81,6 +81,13 @@ class PoliciesController extends Controller
             'config.prorata.*' => ['required', 'integer', 'between:0,365'],
             'config.range_penalty' => ['required', 'numeric', 'between:0,10'],
             'config.milestone_late_penalty' => ['required', 'numeric', 'between:0,1'],
+            'config.how_items' => ['nullable', 'array', 'max:12'],
+            'config.how_items.*.code' => ['nullable', 'string', 'max:20'],
+            'config.how_items.*.label' => ['nullable', 'string', 'max:80'],
+            'config.how_items.*.description' => ['nullable', 'string', 'max:300'],
+            'config.contribution_rubric' => ['nullable', 'array', 'size:5'],
+            'config.contribution_rubric.*' => ['nullable', 'string', 'max:200'],
+            'config.appeal_days' => ['nullable', 'integer', 'between:1,60'],
         ], [], ['name' => 'nama kebijakan']);
 
         $this->policies->updateDraft($policy, $request->input('name'), $request->input('config', []), $request->input('notes'));

@@ -113,6 +113,35 @@
 							<input id="p-seg" type="number" name="config[prorata][min_segment_days]" value="{{ $config['prorata']['min_segment_days'] }}" class="form-control form-control-sm"></div>
 						<div class="col-6"><label class="form-label small" for="p-rated">Minimal hari untuk dinilai</label>
 							<input id="p-rated" type="number" name="config[prorata][min_rated_days]" value="{{ $config['prorata']['min_rated_days'] }}" class="form-control form-control-sm"></div>
+						<div class="col-6"><label class="form-label small" for="p-appeal">Jendela keberatan (hari)</label>
+							<input id="p-appeal" type="number" min="1" max="60" name="config[appeal_days]" value="{{ $config['appeal_days'] }}" class="form-control form-control-sm"></div>
+					</div>
+				</div></div>
+			</div>
+
+			<div class="col-12">
+				<div class="card"><div class="card-body">
+					<h5 class="card-title">Item perilaku (How) & rubrik Kontribusi tambahan</h5>
+					<div class="row">
+						<div class="col-lg-7">
+							<table class="table table-sm align-middle mb-0">
+								<thead><tr><th style="width:90px">Kode</th><th style="width:180px">Perilaku</th><th>Indikator perilaku</th></tr></thead>
+								<tbody>
+								@foreach(array_pad($config['how_items'], count($config['how_items']) + 2, ['code' => '', 'label' => '', 'description' => '']) as $i => $h)
+									<tr><td><input name="config[how_items][{{ $i }}][code]" value="{{ $h['code'] }}" maxlength="20" class="form-control form-control-sm" aria-label="Kode perilaku"></td>
+										<td><input name="config[how_items][{{ $i }}][label]" value="{{ $h['label'] }}" maxlength="80" class="form-control form-control-sm" aria-label="Nama perilaku"></td>
+										<td><input name="config[how_items][{{ $i }}][description]" value="{{ $h['description'] }}" maxlength="300" class="form-control form-control-sm" aria-label="Indikator perilaku"></td></tr>
+								@endforeach
+								</tbody>
+							</table>
+							<div class="form-text">Kosongkan nama untuk menghapus. Dinilai 1–5 oleh pegawai (informatif) dan atasan (dihitung).</div>
+						</div>
+						<div class="col-lg-5">
+							@foreach($config['contribution_rubric'] as $lvl => $desc)
+								<div class="input-group input-group-sm mb-1"><span class="input-group-text">{{ $lvl }}</span>
+									<input name="config[contribution_rubric][{{ $lvl }}]" value="{{ $desc }}" maxlength="200" class="form-control" aria-label="Rubrik kontribusi level {{ $lvl }}"></div>
+							@endforeach
+						</div>
 					</div>
 				</div></div>
 			</div>

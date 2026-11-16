@@ -25,7 +25,7 @@ final class PerformancePeriods
     public function find(int $id): object
     {
         $row = TenantScope::table('performance_periods')->where('id', $id)->first() ?? abort(404);
-        $row->policy = $row->policy_snapshot ? json_decode($row->policy_snapshot, true) : null;
+        $row->policy = $row->policy_snapshot ? PerformancePolicy::withDefaults(json_decode($row->policy_snapshot, true)) : null;
 
         return $row;
     }
@@ -71,14 +71,26 @@ final class PerformancePeriods
     }
 
     /**
-     * Maju satu tahap: perencanaan → monitoring → penilaian.
-     * Ke tahap penilaian hanya bila semua rencana yang disetujui sudah menjalani mid-year review.
+     * Maju satu tahap: perencanaan → monitoring → penilaian → kalibrasi.
+     * Ke penilaian: semua rencana yang disetujui sudah menjalani mid-year review (lalu form penilaian dibuka).
+     * Ke kalibrasi: semua penilaian selesai. Kalibrasi → ditutup lewat pengesahan rating (PerformanceRatings).
      */
     public function advance(int $id): string
     {
         $period = $this->find($id);
-        $next = ['planning' => 'monitoring', 'monitoring' => 'assessment'][$period->status]
-            ?? throw ValidationException::withMessages(['period' => 'Tahap berikutnya belum tersedia untuk status ini.']);
+        $next = ['planning' => 'monitoring', 'monitoring' => 'assessment', 'assessment' => 'calibration'][$period->status]
+            ?? throw ValidationException::withMessages(['period' => 'Tahap berikutnya dilakukan lewat pengesahan rating.']);
+
+        if ($next === 'calibration') {
+            $open = TenantScope::table('performance_assessments')->join('performance_plans', 'performance_plans.id', '=', 'performance_assessments.plan_id')
+                ->join('employees', 'employees.id', '=', 'performance_plans.employee_id')
+                ->where('performance_plans.period_id', $period->id)->where('performance_assessments.status', '!=', 'completed')
+                ->pluck('employees.full_name');
+            if ($open->isNotEmpty()) {
+                throw ValidationException::withMessages(['period' => 'Penilaian belum selesai untuk '.$open->count().' rencana: '
+                    .$open->take(5)->implode(', ').($open->count() > 5 ? ', …' : '').'.']);
+            }
+        }
 
         if ($next === 'assessment') {
             $missing = app(PerformanceMonitoring::class)->missingMidyear($period->id);
@@ -88,8 +100,13 @@ final class PerformancePeriods
             }
         }
 
-        DB::table('performance_periods')->where('id', $id)->update(['status' => $next, 'updated_at' => now()]);
-        AuditLog::updated('performance_periods', $id, ['status' => $period->status], ['status' => $next], 'Tahap periode kinerja: '.self::STATUS[$next]);
+        DB::transaction(function () use ($id, $period, $next) {
+            DB::table('performance_periods')->where('id', $id)->update(['status' => $next, 'updated_at' => now()]);
+            AuditLog::updated('performance_periods', $id, ['status' => $period->status], ['status' => $next], 'Tahap periode kinerja: '.self::STATUS[$next]);
+            if ($next === 'assessment') {
+                app(PerformanceEvaluation::class)->openForPeriod($period);
+            }
+        });
 
         return $next;
     }
