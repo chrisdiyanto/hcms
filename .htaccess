@@ -1,0 +1,22 @@
+# Block access to sensitive files and directories from web root
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Blok akses langsung ke folder yang tidak boleh diakses
+    RewriteRule ^(vendor|node_modules|storage|bootstrap|tests|\.git)(/|$) - [F,L,NC]
+</IfModule>
+
+# Block sensitive files
+<IfModule mod_authz_core.c>
+    <FilesMatch "(^\.env$|^composer\.(json|lock)$|^package(-lock)?\.json$|^phpunit\.xml$|^artisan$|^server\.php$)">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    <FilesMatch "(^\.env$|^composer\.(json|lock)$|^package(-lock)?\.json$|^phpunit\.xml$|^artisan$|^server\.php$)">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>
+
+# Disable directory listing
+Options -Indexes

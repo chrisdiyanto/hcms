@@ -1,0 +1,23 @@
+.env
+
+public/uploads/*
+!public/uploads/.htaccess
+/vendor
+/node_modules
+public/hot
+**/caddy
+frankenphp
+frankenphp-worker.php
+.phpunit.result.cache
+
+# HCMS: tambahan Fase 0
+.env.*
+!.env.example
+/public/build
+/.phpunit.cache
+/storage/*.key
+/.idea
+/.vscode
+npm-debug.log
+yarn-error.log
+Thumbs.db

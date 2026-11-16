@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@section('title', 'Halaman tidak tersedia')
+@section('code', '402')
+@section('heading', 'Halaman tidak tersedia')
+@section('message', 'Permintaan ini belum dapat diproses. Silakan kembali ke halaman utama.')

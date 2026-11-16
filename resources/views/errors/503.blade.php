@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@section('title', 'Layanan sementara tidak tersedia')
+@section('code', '503')
+@section('heading', 'Kami segera kembali')
+@section('message', 'Layanan RiskCue sedang dalam pemeliharaan atau belum tersedia sementara. Silakan coba lagi nanti.')

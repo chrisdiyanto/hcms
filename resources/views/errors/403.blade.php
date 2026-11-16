@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@section('title', 'Akses ditolak')
+@section('code', '403')
+@section('heading', 'Anda tidak memiliki akses')
+@section('message', 'Halaman ini hanya tersedia untuk pengguna dengan izin yang sesuai.')

@@ -1,0 +1,4 @@
+/* Main Application Stylesheet */
+
+/* Sembunyikan elemen Alpine sampai komponen siap */
+[x-cloak] { display: none !important; }

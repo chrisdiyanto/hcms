@@ -1,0 +1,66 @@
+@if($setting['view-method'] =='native')
+<div class="card">
+	<div class="card-body">	
+		<div class="toolbar-nav">
+			<div class="row">
+				
+				<div class="col-md-6  text-start" >
+			   		<a href="{{ ($prevnext['prev'] != '' ? url('unitcategory/'.$prevnext['prev'].'?return='.$return ) : '#') }}" class="tips btn btn-sm btn-primary" onclick="ajaxViewDetail('#unitcategory',this.href); return false; "><i class="fa fa-arrow-left"></i>  </a>	
+					<a href="{{ ($prevnext['next'] != '' ? url('unitcategory/'.$prevnext['next'].'?return='.$return ) : '#') }}" class="tips btn btn-sm btn-primary" onclick="ajaxViewDetail('#unitcategory',this.href); return false; "> <i class="fa fa-arrow-right"></i>  </a>					
+				</div>	
+				<div class="col-md-6 text-end" >
+					<a href="javascript://ajax" onclick="ajaxViewClose('#{{ $pageModule }}')" class="tips btn btn-sm btn-danger  " title="{{ __('core.btn_back') }}"><i class="fa  fa-times"></i></a>		
+				</div>
+				
+
+				
+			</div>
+		</div>
+	
+@endif	
+
+
+		<table class="table  table-bordered" >
+			<tbody>	
+				
+					<tr>
+						<td width='30%' class='label-view text-end'>{{ SiteHelpers::activeLang('Id Unit Category', (isset($fields['id_unit_category']['language'])? $fields['id_unit_category']['language'] : array())) }}</td>
+						<td>{{ $row->id_unit_category}} </td>
+						
+					</tr>
+				
+					<tr>
+						<td width='30%' class='label-view text-end'>{{ SiteHelpers::activeLang('Slug Unit Category', (isset($fields['slug_unit_category']['language'])? $fields['slug_unit_category']['language'] : array())) }}</td>
+						<td>{{ $row->slug_unit_category}} </td>
+						
+					</tr>
+				
+					<tr>
+						<td width='30%' class='label-view text-end'>{{ SiteHelpers::activeLang('Unit Category', (isset($fields['unit_category']['language'])? $fields['unit_category']['language'] : array())) }}</td>
+						<td>{{ $row->unit_category}} </td>
+						
+					</tr>
+				
+					<tr>
+						<td width='30%' class='label-view text-end'>{{ SiteHelpers::activeLang('Unit Category Code', (isset($fields['unit_category_code']['language'])? $fields['unit_category_code']['language'] : array())) }}</td>
+						<td>{{ $row->unit_category_code}} </td>
+						
+					</tr>
+				
+					<tr>
+						<td width='30%' class='label-view text-end'>{{ SiteHelpers::activeLang('Unit Category Explan', (isset($fields['unit_category_explan']['language'])? $fields['unit_category_explan']['language'] : array())) }}</td>
+						<td>{{ $row->unit_category_explan}} </td>
+						
+					</tr>
+				
+			</tbody>	
+		</table>  
+			
+		 	
+		 
+@if($setting['view-method'] =='native')
+	</div>
+</div>
+@endif		
+
+@include('sximo.module.template.ajax.viewjavascript')

@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@section('title', 'Akses dibatasi')
+@section('code', '403')
+@section('heading', 'Akses dibatasi')
+@section('message', 'Aplikasi RiskCue saat ini tidak tersedia dari alamat jaringan Anda. Jika Anda merasa ini keliru, silakan hubungi tim kami.')

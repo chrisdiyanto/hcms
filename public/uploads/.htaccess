@@ -1,0 +1,35 @@
+# Folder upload: isi berasal dari pengguna, jadi jangan pernah dieksekusi sebagai skrip.
+
+Options -ExecCGI -Indexes
+
+# Matikan PHP bila memakai mod_php
+<IfModule php_module>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+
+# Lepas handler skrip (mod_fcgid / CGI)
+RemoveHandler .php .php3 .php4 .php5 .php7 .php8 .phtml .phar .phps .pht .pgif .inc .shtml .cgi .pl .py .asp .aspx .jsp .sh
+RemoveType .php .php3 .php4 .php5 .php7 .php8 .phtml .phar .phps .pht .pgif .inc .shtml
+
+# Tolak akses ke file berekstensi skrip (termasuk nama ganda seperti shell.php.jpg)
+<FilesMatch "(?i)\.(php\d?|phtml|phar|phps|pht|pgif|inc|shtml|cgi|pl|py|asp|aspx|jsp|sh|htaccess|htpasswd|user\.ini)(\.|$)">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    # Browser tidak boleh menebak tipe file (mis. gambar berisi HTML)
+    Header set X-Content-Type-Options "nosniff"
+    # SVG / HTML / XML tidak boleh menjalankan script bila dibuka langsung
+    <FilesMatch "(?i)\.(svgz?|html?|xhtml|xml)$">
+        Header set Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; sandbox"
+    </FilesMatch>
+</IfModule>
