@@ -2,7 +2,7 @@
 <div style="width:760px !important; ;">
 <?php
 		
-	$content = $title;
+	$content = (isset($watermark) ? '<p style="color:#b00000;font-weight:bold;">'.e($watermark).'</p>' : '').$title;
 	$content .= '<table  class="table">';
 	$content .= '<tr>';
 	foreach($fields as $f )

@@ -82,7 +82,7 @@ class EmployeeTest extends TestCase
 
         $this->get('/employees/'.$employee->id)->assertOk()->assertSee('••••••••••••0001')->assertDontSee('3171010101900001');
         $this->postJson('/employees/'.$employee->id.'/identity')->assertOk()->assertJsonPath('nik_ktp', '3171010101900001');
-        $this->assertTrue(DB::table('tb_logs')->where('module', 'employees.sensitive')->exists());
+        $this->assertTrue(DB::table('audit_logs')->where('event', 'sensitive_viewed')->where('auditable_id', (string) $employee->id)->exists());
 
         // NIK duplikat, PKWT tanpa akhir kontrak, NIP duplikat
         $this->post('/employees', ['company_id' => $this->company, 'employee_number' => 'EMP-002', 'full_name' => 'X', 'employment_status' => 'pkwtt',

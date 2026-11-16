@@ -931,8 +931,18 @@ abstract class Controller extends BaseController {
 			return redirect('dashboard')->with('message', __('core.note_restric'))->with('status','error');
 		}
 
+		// Ekspor wajib beralasan (blueprint 3.3); tanpa alasan tampilkan formulir alasan
+		$reason = (string) $request->input('export_reason');
+		if(!\App\Support\Audit\DataExport::validReason($reason))
+			return view('sximo.module.utility.export-reason', array(
+				'action' => $request->url(), 'query' => $request->except('export_reason'),
+				'threshold' => \App\Support\Audit\DataExport::MASS_THRESHOLD, 'min' => \App\Support\Audit\DataExport::MIN_REASON,
+				'error' => $request->has('export_reason') ? 'Alasan minimal '.\App\Support\Audit\DataExport::MIN_REASON.' karakter.' : null,
+				'pageTitle' => $this->data['pageTitle'] ?? '', 'pageNote' => '',
+			));
+
 		$info 		= $this->model->makeInfo( $this->module);
-		$filter = '';	
+		$filter = '';
 		if(!is_null($request->input('search')))
 		{
 			$search = 	$this->buildSearch('maps');
@@ -949,10 +959,16 @@ abstract class Controller extends BaseController {
 		$results 	= $this->model->getRows( $params );
 		$fields		= $info['config']['grid'];
 		$rows		= $results['rows'];
+
+		if(!\App\Support\Audit\DataExport::allowed(count($rows), (array) $this->access))
+			return redirect($this->module)->with('message', 'Ekspor lebih dari '.\App\Support\Audit\DataExport::MASS_THRESHOLD.' baris membutuhkan izin Approve. Kurangi jumlah baris.')->with('status','error');
+		$exportLogId = \App\Support\Audit\DataExport::log($this->module, (string) $t, count($rows), $reason, array('search' => $request->input('search'), 'fstart' => $request->input('fstart'), 'flimit' => $request->input('flimit')));
+
 		$content 	= array(
 						'fields' => $fields,
 						'rows' => $rows,
 						'title' => $this->data['pageTitle'],
+						'watermark' => \App\Support\Audit\DataExport::watermark($exportLogId),
 					);
 		
 		if($t == 'word')

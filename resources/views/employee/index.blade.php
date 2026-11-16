@@ -24,6 +24,7 @@
 			</div>
 			<div class="col-md-1"><button class="btn btn-sm btn-outline-secondary w-100" type="submit">Cari</button></div>
 			<div class="col-md-2 text-end">
+				@if(!empty($access['is_csv']) || !empty($access['is_excel']))<a href="{{ url('employees/export').'?'.http_build_query($filters) }}" class="btn btn-sm btn-outline-secondary">Ekspor CSV</a>@endif
 				@if(!empty($access['is_add']))<a href="{{ url('employees/create') }}" class="btn btn-sm btn-info">Tambah pegawai</a>@endif
 			</div>
 		</form>

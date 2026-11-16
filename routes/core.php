@@ -21,6 +21,7 @@ Route::post('core/tenants/{tenant}/status', 'Core\TenantsController@status');
 Route::get('core/tenants/{tenant}/break-glass', 'Core\TenantsController@breakGlassForm');
 Route::post('core/tenants/{tenant}/break-glass', 'Core\TenantsController@breakGlassStart')->middleware('throttle:5,1,break-glass');
 Route::post('core/break-glass/end', 'Core\TenantsController@breakGlassEnd');
+Route::get('core/audit', 'Core\AuditTrailController@index');
 /* End Tenants Routes */
 
 //-------------------------------------------------------------------------

@@ -3,6 +3,7 @@
 namespace App\Domain\Employee\Actions;
 
 use App\Domain\Employee\Services\EmployeeHistory;
+use App\Support\Audit\AuditLog;
 use App\Support\Tenancy\TenantContext;
 use App\Support\Tenancy\TenantScope;
 use Illuminate\Support\Carbon;
@@ -56,6 +57,7 @@ final class TerminateEmployee
                 'updated_at' => now(),
             ]));
 
+            AuditLog::created('employee_terminations', $id, TenantScope::table('employee_terminations')->where('id', $id)->first());
             if ($date <= now()->toDateString()) {
                 $this->process($id);
             }
@@ -68,6 +70,7 @@ final class TerminateEmployee
     {
         TenantScope::table('employee_terminations')->where('id', $terminationId)->where('state', 'scheduled')
             ->update(['state' => 'cancelled', 'updated_at' => now()]) ?: abort(404);
+        AuditLog::updated('employee_terminations', $terminationId, ['state' => 'scheduled'], ['state' => 'cancelled'], 'Terminasi dibatalkan');
     }
 
     public function process(int $terminationId): void
@@ -92,6 +95,10 @@ final class TerminateEmployee
 
         TenantScope::table('employee_terminations')->where('id', $t->id)->update(['state' => 'processed', 'processed_at' => now(), 'updated_at' => now()]);
         EmployeeHistory::record((int) $t->employee_id, 'status', 'active', 'terminated', $t->termination_date, self::TYPES[$t->type].': '.$t->reason);
+        AuditLog::updated('employees', (int) $t->employee_id, $employee, TenantScope::table('employees')->where('id', $t->employee_id)->first(), 'Terminasi #'.$t->id);
+        if ($employee->user_id) {
+            AuditLog::security('tb_users', $employee->user_id, 'Akun login dinonaktifkan karena terminasi #'.$t->id);
+        }
     }
 
     /** Proses semua terminasi terjadwal yang jatuh tempo, lintas tenant. @return int jumlah diproses */

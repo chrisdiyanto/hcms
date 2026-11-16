@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Employee;
 use App\Domain\Employee\Services\EmployeeScope;
 use App\Http\Controllers\Concerns\AuthorizesHcmsModule;
 use App\Http\Controllers\Controller;
+use App\Support\Audit\AuditLog;
 use App\Support\Tenancy\TenantScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -82,10 +83,11 @@ class EmployeeRecordsController extends Controller
             }
         }
 
-        DB::table($def['table'])->insert(TenantScope::fillForInsert($def['table'], $data + [
+        $recordId = DB::table($def['table'])->insertGetId(TenantScope::fillForInsert($def['table'], $data + [
             'employee_id' => $employee, 'created_by' => auth()->id(), 'created_at' => now(), 'updated_at' => now(),
         ]));
         $this->logActivity($request, 'Tambah '.$def['title'].' pegawai #'.$employee);
+        AuditLog::created($def['table'], $recordId, TenantScope::table($def['table'])->where('id', $recordId)->first());
 
         return redirect('employees/'.$employee.'#'.$type)->with('message', __('core.note_success'))->with('status', 'success');
     }
@@ -96,6 +98,8 @@ class EmployeeRecordsController extends Controller
         $def = $this->definition($type);
         $this->ensureVisible($employee);
 
+        $old = TenantScope::table($def['table'])->where('id', $record)->where('employee_id', $employee)->first() ?? abort(404);
+        AuditLog::deleted($def['table'], $record, $old);
         TenantScope::table($def['table'])->where('id', $record)->where('employee_id', $employee)->delete() ?: abort(404);
         $this->logActivity($request, 'Hapus '.$def['title'].' #'.$record.' pegawai #'.$employee);
 

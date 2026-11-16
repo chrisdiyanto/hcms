@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Domain\Security\Services\Mfa;
+use App\Support\Audit\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Auth;
@@ -96,6 +97,7 @@ class MfaController extends BaseController
 
     private function log(Request $request, string $note): void
     {
+        AuditLog::security('tb_users', Auth::id(), $note);
         DB::table('tb_logs')->insert([
             'ipaddress' => (string) $request->ip(),
             'user_id' => (int) Auth::id(),

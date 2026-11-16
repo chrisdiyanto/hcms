@@ -5,6 +5,7 @@ namespace App\Domain\Employee\Workflow;
 use App\Domain\Employee\Services\EmployeeHistory;
 use App\Domain\Workflow\Contracts\WorkflowSubject;
 use App\Domain\Workflow\WorkflowEngine;
+use App\Support\Audit\AuditLog;
 use App\Support\Tenancy\TenantScope;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -108,6 +109,7 @@ final class EmployeeChangeRequestSubject implements WorkflowSubject
         }
 
         TenantScope::table('employees')->where('id', $employee->id)->update($update + ['updated_at' => now()]);
+        AuditLog::updated('employees', (int) $employee->id, $employee, TenantScope::table('employees')->where('id', $employee->id)->first(), 'ESS #'.$id);
         TenantScope::table('employee_change_requests')->where('id', $id)->update(['status' => 'approved', 'applied_at' => now(), 'updated_at' => now()]);
     }
 

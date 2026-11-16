@@ -3,6 +3,7 @@
 namespace App\Domain\Employee\Actions;
 
 use App\Domain\Employee\Services\EmployeeHistory;
+use App\Support\Audit\AuditLog;
 use App\Support\Tenancy\TenantScope;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -58,6 +59,7 @@ final class AssignEmployee
 
             $position = TenantScope::table('positions')->where('id', $data['position_id'])->value('code');
             EmployeeHistory::record($employeeId, 'assignment_'.$type, null, $position, $from, $data['decree_number'] ?? null);
+            AuditLog::created('employee_assignments', $id, TenantScope::table('employee_assignments')->where('id', $id)->first());
 
             return $id;
         });
@@ -75,6 +77,7 @@ final class AssignEmployee
         TenantScope::table('employee_assignments')->where('id', $assignmentId)
             ->update(['effective_to' => $date, 'updated_by' => auth()->id(), 'updated_at' => now()]);
 
+        AuditLog::updated('employee_assignments', $assignmentId, $assignment, TenantScope::table('employee_assignments')->where('id', $assignmentId)->first(), $reason);
         $position = TenantScope::table('positions')->where('id', $assignment->position_id)->value('code');
         EmployeeHistory::record((int) $assignment->employee_id, 'assignment_'.$assignment->type, $position, null, $date, $reason);
     }

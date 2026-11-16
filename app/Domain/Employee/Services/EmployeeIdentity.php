@@ -2,6 +2,7 @@
 
 namespace App\Domain\Employee\Services;
 
+use App\Support\Audit\AuditLog;
 use App\Support\Tenancy\TenantScope;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -46,6 +47,9 @@ final class EmployeeIdentity
                 'employee_id' => $employeeId, 'created_at' => now(),
             ]));
         }
+
+        $changed = array_intersect_key(self::FIELDS, array_intersect_key($values, self::FIELDS));
+        AuditLog::security('employee_identities', $employeeId, 'Identitas negara diperbarui: '.implode(', ', $changed), array_fill_keys(array_keys($changed), '[diubah]'));
     }
 
     /** @return array<string, ?string> nilai terbuka */

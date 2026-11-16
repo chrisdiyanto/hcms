@@ -6,6 +6,7 @@ header('Content-Disposition: attachment; filename='.$title.'-data.'.strtotime(da
 
 // create a file pointer connected to the output stream
 	$output = fopen('php://output', 'w');
+	if(isset($watermark)) fputcsv($output, array($watermark));
 
 	$head= array();
 	foreach($fields as $f )
@@ -78,4 +79,5 @@ return $content;
 //fclose($fp);
 //exit;
 
+*/ // komentar blok di atas sebelumnya tidak ditutup (bug master: ekspor CSV selalu ParseError)
 ?>

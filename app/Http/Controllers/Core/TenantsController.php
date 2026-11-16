@@ -6,6 +6,7 @@ use App\Domain\Security\Services\BreakGlass;
 use App\Domain\Tenancy\Actions\CreateTenant;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
+use App\Support\Audit\AuditLog;
 use App\Support\Security\Roles;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -171,7 +172,9 @@ class TenantsController extends Controller
 
     public function breakGlassEnd(Request $request, BreakGlass $breakGlass)
     {
-        $breakGlass->end((int) auth()->id(), (int) $request->session()->pull(BreakGlass::SESSION_KEY));
+        $bgId = (int) $request->session()->pull(BreakGlass::SESSION_KEY);
+        $breakGlass->end((int) auth()->id(), $bgId);
+        AuditLog::security('break_glass_accesses', $bgId, 'Break-glass diakhiri');
 
         return redirect('core/tenants')->with('message', 'Break-glass diakhiri.')->with('status', 'success');
     }
@@ -211,6 +214,7 @@ class TenantsController extends Controller
 
     private function logActivity(Request $request, Tenant $tenant, string $note): void
     {
+        AuditLog::security('tenants', $tenant->id, $note);
         DB::table('tb_logs')->insert([
             'ipaddress' => (string) $request->ip(),
             'user_id' => (int) session('uid'),

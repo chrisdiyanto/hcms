@@ -16,6 +16,7 @@ Route::resource('organization/jobs', 'Organization\JobsController')->except('sho
 Route::resource('organization/positions', 'Organization\PositionsController')->except('show')->parameters(['positions' => 'id']);
 
 // Employee Management
+Route::get('employees/export', 'Employee\EmployeesController@export')->middleware('throttle:10,1,export');
 Route::resource('employees', 'Employee\EmployeesController')->parameters(['employees' => 'id'])->whereNumber('id');
 Route::post('employees/{id}/identity', 'Employee\EmployeesController@revealIdentity')->whereNumber('id')->middleware('throttle:20,1,identity');
 Route::post('employees/{employee}/records/{type}', 'Employee\EmployeeRecordsController@store')->whereNumber('employee');

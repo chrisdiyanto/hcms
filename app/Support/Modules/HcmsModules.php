@@ -63,6 +63,9 @@ final class HcmsModules
             'workflows' => ['title' => 'Alur Persetujuan', 'table' => 'workflow_definitions', 'url' => 'workflow/definitions', 'parent' => 'Control Panel', 'icon' => 'fa fa-project-diagram', 'title_id' => 'Alur Persetujuan',
                 'access' => [Roles::SUPER_ADMIN => self::FULL, Roles::TENANT_ADMIN => self::FULL]],
 
+            'audittrail' => ['title' => 'Audit Trail', 'table' => 'audit_logs', 'url' => 'core/audit', 'parent' => 'Control Panel', 'icon' => 'fa fa-history', 'title_id' => 'Jejak Audit',
+                'access' => [Roles::SUPER_ADMIN => self::READ, Roles::TENANT_ADMIN => self::READ, Roles::AUDITOR => self::READ, Roles::DPO => self::READ]],
+
             // Employee Management — isi daftar tetap dibatasi data scope tiap peran
             'employees' => ['title' => 'Pegawai', 'table' => 'employees', 'url' => 'employees', 'parent' => 'kepegawaian', 'icon' => 'fa fa-id-card', 'title_id' => 'Pegawai',
                 'access' => $hrManage + $orgRead + [Roles::LINE_MANAGER => self::READ, Roles::EMPLOYEE => self::READ]],

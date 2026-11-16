@@ -2,7 +2,7 @@
 
 
 		
-	$content = $title;
+	$content = (isset($watermark) ? '<p style="color:#b00000;font-weight:bold;">'.e($watermark).'</p>' : '').$title;
 	$content .= '<table border="1">';
 	$content .= '<tr>';
 	foreach($fields as $f )
@@ -45,7 +45,7 @@
 		
 /*		
 
-$content = $title;
+$content = (isset($watermark) ? '<p style="color:#b00000;font-weight:bold;">'.e($watermark).'</p>' : '').$title;
 $content .= '<table border="1">';
 $content .= '<tr>';
 foreach($fields as $f )

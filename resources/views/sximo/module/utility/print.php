@@ -3,7 +3,7 @@
 	<div class="box-body">
 	
 <?php	
-	$content = '' ;
+	$content = (isset($watermark) ? '<p style="color:#b00000;font-weight:bold;">'.e($watermark).'</p>' : '');
 	$content .= '<table class="table table-striped table-bordered">';
 	$content .= '<tr>';
 	foreach($fields as $f )

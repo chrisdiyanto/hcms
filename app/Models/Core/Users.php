@@ -295,6 +295,7 @@ class Users extends Sximo  {
 		// Hanya pengguna milik tenant aktif yang boleh dihapus
 		if(!\App\Support\Tenancy\TenantScope::table('tb_users')->where('id', $id)->exists())
 			return 0;
+		\App\Support\Audit\AuditLog::deleted('tb_users', $id, \App\Support\Tenancy\TenantScope::table('tb_users')->where('id', $id)->first());
 		\DB::table('user_unit')->where('id_user', $id)->delete();
 		\DB::table('tb_users_groups')->where('user_id', $id)->delete();
 		$query = \DB::table('tb_users')

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Core;
 use App\Domain\Security\Services\Mfa;
 use App\Http\Controllers\Controller;
 use App\Models\Core\Users;
+use App\Support\Audit\AuditLog;
 use App\Support\Security\DataScope;
 use App\Support\Security\Roles;
 use App\Support\Tenancy\TenantScope;
@@ -172,6 +173,7 @@ class DataScopesController extends Controller
 
     private function audit(Request $request, int $userId, string $note): void
     {
+        AuditLog::security('user_data_scopes', $userId, $note);
         DB::table('tb_logs')->insert([
             'ipaddress' => (string) $request->ip(),
             'user_id' => (int) auth()->id(),

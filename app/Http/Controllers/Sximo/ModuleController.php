@@ -1088,6 +1088,7 @@ class ModuleController extends Controller {
         {
             // remove current group_access             
             $group_id = $groupID[$i];
+            $accessBefore = \DB::table('tb_groups_access')->where('module_id', $request->input('module_id'))->where('group_id', $group_id)->value('access_data');
             \DB::table('tb_groups_access')
                               ->where('module_id','=',$request->input('module_id'))
                               ->where('group_id','=',$group_id)
@@ -1110,6 +1111,7 @@ class ModuleController extends Controller {
                 "group_id"        => $groupID[$i],
             );
             \DB::table('tb_groups_access')->insert($data);    
+            \App\Support\Audit\AuditLog::updated('tb_groups_access', $request->input('module_id').':'.$group_id, json_decode((string) $accessBefore, true) ?: [], $arr, 'Hak akses modul #'.$request->input('module_id').' grup #'.$group_id);
         }
 
         if($request->ajax() == true)

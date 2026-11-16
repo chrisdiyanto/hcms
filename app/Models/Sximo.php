@@ -27,6 +27,11 @@ class Sximo extends Model {
 			}
 		});
 
+		// Audit penghapusan lewat Eloquent (destroy() Sximo)
+		static::deleted(function ($model) {
+			\App\Support\Audit\AuditLog::deleted($model->getTable(), $model->getKey(), $model->getAttributes());
+		});
+
 		static::creating(function ($model) {
 			$model->setRawAttributes(TenantScope::fillForInsert($model->getTable(), $model->getAttributes()));
 		});
@@ -172,7 +177,9 @@ class Sximo extends Model {
             // Insert Here 
 			if(isset($data['createdOn'])) $data['createdOn'] = date("Y-m-d H:i:s");	
 			if(isset($data['updatedOn'])) $data['updatedOn'] = date("Y-m-d H:i:s");
-			 $id = \DB::table( $table)->insertGetId(TenantScope::fillForInsert($table, $data));
+			 $data = TenantScope::fillForInsert($table, $data);
+			 $id = \DB::table( $table)->insertGetId($data);
+			 \App\Support\Audit\AuditLog::created($table, $id, $data);
 
         } else {
             // Update here
@@ -183,8 +190,11 @@ class Sximo extends Model {
 			if(!TenantScope::table($table)->where($key,$id)->exists())
 				abort(404);
 			$data = TenantScope::guardForUpdate($table, $data);
-			if(!empty($data))
+			if(!empty($data)) {
+				$before = TenantScope::table($table)->where($key,$id)->first();
 				TenantScope::table($table)->where($key,$id)->update($data);
+				\App\Support\Audit\AuditLog::updated($table, $id, $before, TenantScope::table($table)->where($key,$id)->first());
+			}
         }
         return $id;
 	}			
@@ -409,17 +419,23 @@ class Sximo extends Model {
 
 	    if($id == null )
         {
-			 $id = DB::table( $table)->insertGetId(TenantScope::fillForInsert($table, $data));
+			 $data = TenantScope::fillForInsert($table, $data);
+			 $id = DB::table( $table)->insertGetId($data);
+			 \App\Support\Audit\AuditLog::created($table, $id, $data);
 
         } else {
             // Update here
+			 $before = TenantScope::table($table)->where($key,$id)->first();
 			 TenantScope::table($table)->where($key,$id)->update(TenantScope::guardForUpdate($table, $data));
+			 if($before) \App\Support\Audit\AuditLog::updated($table, $id, $before, TenantScope::table($table)->where($key,$id)->first());
         }
         return $id;
 	}
 	public  static function deleteDataRow( $table , $key , $data  )
 	{
 
+	     foreach(TenantScope::table($table)->whereIn($key,(array) $data)->get() as $row)
+	     	\App\Support\Audit\AuditLog::deleted($table, $row->{$key} ?? null, $row);
 	     TenantScope::table($table)->whereIn($key,(array) $data)->delete();
 	}
 }

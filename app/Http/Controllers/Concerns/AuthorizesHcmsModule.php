@@ -6,23 +6,25 @@ use App\Models\Sximo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-/** Hak akses modul HCMS lewat tb_groups_access (izin Sximo) + catatan aktivitas. */
+/**
+ * Hak akses modul HCMS lewat tb_groups_access (izin Sximo) + catatan aktivitas.
+ *
+ * Jangan menyimpan hasil hak akses di properti controller: Laravel memakai ulang
+ * instance controller yang sama antar-request (Route menyimpan instance-nya,
+ * dan di Octane worker hidup lama), sehingga hak akses pengguna sebelumnya
+ * bisa terbawa ke pengguna berikutnya.
+ */
 trait AuthorizesHcmsModule
 {
-    private ?array $moduleAccessCache = null;
-
     abstract protected function moduleName(): string;
 
     protected function moduleAccess(): array
     {
-        if ($this->moduleAccessCache === null) {
-            $model = new Sximo;
-            $info = $model->makeInfo($this->moduleName());
-            $access = isset($info['id']) ? $model->validAccess($info['id'], session('gid')) : false;
-            $this->moduleAccessCache = is_array($access) ? $access : [];
-        }
+        $model = new Sximo;
+        $info = $model->makeInfo($this->moduleName());
+        $access = isset($info['id']) ? $model->validAccess($info['id'], session('gid')) : false;
 
-        return $this->moduleAccessCache;
+        return is_array($access) ? $access : [];
     }
 
     protected function can(string $task): bool
@@ -32,11 +34,12 @@ trait AuthorizesHcmsModule
 
     protected function authorizeTask(string $task): array
     {
-        if (! $this->can($task)) {
+        $access = $this->moduleAccess();
+        if (empty($access[$task])) {
             abort(redirect('dashboard')->with('message', __('core.note_restric'))->with('status', 'error'));
         }
 
-        return $this->moduleAccess();
+        return $access;
     }
 
     protected function logActivity(Request $request, string $note, ?string $module = null): void

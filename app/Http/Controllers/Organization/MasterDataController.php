@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Organization;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sximo;
+use App\Support\Audit\AuditLog;
 use App\Support\Tenancy\TenantScope;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
@@ -152,6 +153,7 @@ abstract class MasterDataController extends Controller
         }
 
         TenantScope::table($this->table())->where('id', $id)->update(['deleted_at' => now(), 'updated_by' => auth()->id()]);
+        AuditLog::deleted($this->table(), $id, $row, 'Soft delete');
         $this->log($request, 'Hapus '.$this->title().' #'.$id.' ('.($row->code ?? '').')');
 
         return redirect($this->baseUrl())->with('message', __('core.note_success_delete'))->with('status', 'success');
@@ -213,10 +215,13 @@ abstract class MasterDataController extends Controller
             if ($row) {
                 TenantScope::table($this->table())->where('id', $row->id)->update(TenantScope::guardForUpdate($this->table(), $data));
                 $id = (int) $row->id;
+                AuditLog::updated($this->table(), $id, $row, TenantScope::table($this->table())->where('id', $id)->first());
             } else {
                 $data['created_by'] = auth()->id();
                 $data['created_at'] = now();
-                $id = (int) DB::table($this->table())->insertGetId(TenantScope::fillForInsert($this->table(), $data));
+                $data = TenantScope::fillForInsert($this->table(), $data);
+                $id = (int) DB::table($this->table())->insertGetId($data);
+                AuditLog::created($this->table(), $id, $data);
             }
 
             $this->afterSave($request, $id, $row);

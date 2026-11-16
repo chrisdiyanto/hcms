@@ -9,7 +9,10 @@ use App\Domain\Employee\Services\EmployeeIdentity;
 use App\Domain\Employee\Services\EmployeeScope;
 use App\Http\Controllers\Concerns\AuthorizesHcmsModule;
 use App\Http\Controllers\Controller;
+use App\Support\Audit\AuditLog;
+use App\Support\Audit\DataExport;
 use App\Support\Tenancy\TenantScope;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -37,14 +40,76 @@ class EmployeesController extends Controller
     public function index(Request $request)
     {
         $access = $this->authorizeTask('is_view');
-        $today = now()->toDateString();
-        $filters = [
+        $filters = $this->filters($request);
+        $rows = $this->listQuery($filters)->paginate(25)->withQueryString();
+
+        return view('employee.index', [
+            'pageTitle' => 'Pegawai',
+            'pageNote' => '',
+            'rows' => $rows,
+            'filters' => $filters,
+            'companies' => TenantScope::table('corporate')->orderBy('corporate_name')->pluck('corporate_name', 'id_corporate'),
+            'access' => $access,
+        ]);
+    }
+
+    /**
+     * Ekspor CSV daftar pegawai sesuai filter & data scope. Wajib alasan, diberi
+     * watermark, tercatat; identitas negara tidak pernah ikut diekspor.
+     */
+    public function export(Request $request)
+    {
+        $access = $this->moduleAccess();
+        if (empty($access['is_csv']) && empty($access['is_excel'])) {
+            $this->authorizeTask('is_csv');
+        }
+
+        $reason = (string) $request->input('export_reason');
+        if (! DataExport::validReason($reason)) {
+            return view('sximo.module.utility.export-reason', [
+                'action' => $request->url(), 'query' => $request->except('export_reason'),
+                'threshold' => DataExport::MASS_THRESHOLD, 'min' => DataExport::MIN_REASON,
+                'error' => $request->has('export_reason') ? 'Alasan minimal '.DataExport::MIN_REASON.' karakter.' : null,
+                'pageTitle' => 'Ekspor Pegawai', 'pageNote' => '',
+            ]);
+        }
+
+        $filters = $this->filters($request);
+        $rows = $this->listQuery($filters)->get();
+        if (! DataExport::allowed($rows->count(), $access)) {
+            return redirect('employees')->with('message', 'Ekspor lebih dari '.DataExport::MASS_THRESHOLD.' baris membutuhkan izin Approve. Persempit filter.')->with('status', 'error');
+        }
+
+        $logId = DataExport::log('employees', 'csv', $rows->count(), $reason, $filters);
+        $watermark = DataExport::watermark($logId);
+
+        return response()->streamDownload(function () use ($rows, $watermark) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, [$watermark]);
+            fputcsv($out, ['NIP', 'Nama', 'Company', 'Posisi', 'Unit', 'Status kerja', 'Bergabung', 'Status']);
+            foreach ($rows as $e) {
+                fputcsv($out, [$e->employee_number, $e->full_name, $e->corporate_name, $e->position_title, $e->unit_name,
+                    self::EMPLOYMENT[$e->employment_status] ?? $e->employment_status, $e->join_date, $e->status]);
+            }
+            fclose($out);
+        }, 'pegawai-'.now()->format('Ymd-His').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    private function filters(Request $request): array
+    {
+        return [
             'q' => trim((string) $request->input('q')),
             'company' => $request->input('company'),
             'status' => $request->input('status', 'active'),
         ];
+    }
 
-        $rows = EmployeeScope::query()
+    /** Daftar pegawai dalam data scope, dengan posisi primer aktif hari ini. */
+    private function listQuery(array $filters): Builder
+    {
+        $today = now()->toDateString();
+
+        return EmployeeScope::query()
             ->leftJoin('employee_assignments as pa', function ($join) use ($today) {
                 $join->on('pa.employee_id', '=', 'employees.id')->where('pa.type', 'primary')
                     ->where('pa.effective_from', '<=', $today)
@@ -59,17 +124,7 @@ class EmployeesController extends Controller
             ->when($filters['company'], fn ($q) => $q->where('employees.company_id', $filters['company']))
             ->when(in_array($filters['status'], ['active', 'terminated'], true), fn ($q) => $q->where('employees.status', $filters['status']))
             ->select('employees.*', 'positions.title as position_title', 'unit.unit_name', 'corporate.corporate_name')
-            ->orderBy('employees.full_name')
-            ->paginate(25)->withQueryString();
-
-        return view('employee.index', [
-            'pageTitle' => 'Pegawai',
-            'pageNote' => '',
-            'rows' => $rows,
-            'filters' => $filters,
-            'companies' => TenantScope::table('corporate')->orderBy('corporate_name')->pluck('corporate_name', 'id_corporate'),
-            'access' => $access,
-        ]);
+            ->orderBy('employees.full_name');
     }
 
     public function create()
@@ -89,6 +144,7 @@ class EmployeesController extends Controller
                 'status' => 'active', 'created_by' => auth()->id(), 'updated_by' => auth()->id(), 'created_at' => now(), 'updated_at' => now(),
             ]));
             EmployeeHistory::diff($id, null, TenantScope::table('employees')->where('id', $id)->first());
+            AuditLog::created('employees', $id, TenantScope::table('employees')->where('id', $id)->first());
             if ($this->can('is_sensitive')) {
                 EmployeeIdentity::save($id, $request->only(array_keys(EmployeeIdentity::FIELDS)));
             }
@@ -157,6 +213,7 @@ class EmployeesController extends Controller
         DB::transaction(function () use ($id, $data, $before, $request) {
             TenantScope::table('employees')->where('id', $id)->update(TenantScope::guardForUpdate('employees', $data + ['updated_by' => auth()->id(), 'updated_at' => now()]));
             EmployeeHistory::diff($id, $before, TenantScope::table('employees')->where('id', $id)->first());
+            AuditLog::updated('employees', $id, $before, TenantScope::table('employees')->where('id', $id)->first());
             if ($this->can('is_sensitive') && $request->boolean('update_identity')) {
                 EmployeeIdentity::save($id, $request->only(array_keys(EmployeeIdentity::FIELDS)));
             }
@@ -177,6 +234,7 @@ class EmployeesController extends Controller
         }
 
         TenantScope::table('employees')->where('id', $id)->update(['deleted_at' => now(), 'updated_by' => auth()->id()]);
+        AuditLog::deleted('employees', $id, $employee, 'Soft delete');
         $this->logActivity($request, 'Hapus pegawai #'.$id.' ('.$employee->employee_number.')');
 
         return redirect('employees')->with('message', __('core.note_success_delete'))->with('status', 'success');
@@ -187,7 +245,7 @@ class EmployeesController extends Controller
     {
         $this->authorizeTask('is_sensitive');
         $this->findVisible($id);
-        $this->logActivity($request, 'Membuka identitas pegawai #'.$id, 'employees.sensitive');
+        AuditLog::sensitiveViewed('employee_identities', $id, 'Membuka identitas negara pegawai #'.$id);
 
         return response()->json(EmployeeIdentity::reveal($id));
     }
