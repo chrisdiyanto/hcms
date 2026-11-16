@@ -71,7 +71,7 @@ class Users extends Sximo  {
 		// End Update permission global / own access new ver 1.1			
         
 		$rows = array();
-	    $result = \DB::select( self::querySelect() . self::queryWhere(). " 
+	    $result = \DB::select( self::querySelect() . static::scopedWhere(). " 
 				{$params} ". self::queryGroup() ." {$orderConditional}  {$limitConditional} ");
 		
 		$total = \DB::select( "
@@ -80,7 +80,7 @@ class Users extends Sximo  {
 			LEFT JOIN tb_users_groups ON tb_users_groups.user_id = tb_users.id
 			LEFT JOIN tb_groups ON tb_groups.group_id = tb_users_groups.group_id 
 			LEFT JOIN user_unit ON user_unit.id_user = tb_users.id
-			LEFT JOIN unit ON unit.id_unit = user_unit.id_unit " . self::queryWhere(). " 
+			LEFT JOIN unit ON unit.id_unit = user_unit.id_unit " . static::scopedWhere(). " 
 				{$params} ". self::queryGroup() );
 		$total = (count($total) != 0 ? $total[0]->total : 0 );
 
@@ -134,6 +134,10 @@ class Users extends Sximo  {
 	}
 
 	function syncUserUnits($userId, $units, $positions = [], $startDates = [], $endDates = []){
+		// Pengguna dan unit/posisi harus milik tenant aktif
+		if(!\App\Support\Tenancy\TenantScope::table('tb_users')->where('id', $userId)->exists())
+			return 0;
+
 		\DB::table('user_unit')->where('id_user', $userId)->delete();
 
 		$unitsArr = is_array($units) ? $units : [$units];
@@ -141,9 +145,16 @@ class Users extends Sximo  {
 		$startArr = is_array($startDates) ? $startDates : [$startDates];
 		$endArr   = is_array($endDates) ? $endDates : [$endDates];
 
+		$ownedUnits = \App\Support\Tenancy\TenantScope::table('unit')
+			->whereIn('id_unit', array_filter(array_merge($unitsArr, $posArr)))
+			->pluck('id_unit')->map(fn ($v) => (int) $v)->all();
+		$owned = fn ($v) => !empty($v) && in_array((int) $v, $ownedUnits, true);
+
 		$inserted = 0;
 		foreach ($unitsArr as $idx => $unitId) {
 			$posId     = $posArr[$idx] ?? null;
+			$unitId    = $owned($unitId) ? $unitId : null;
+			$posId     = $owned($posId) ? $posId : null;
 			$startDate = !empty($startArr[$idx]) ? $startArr[$idx] : now();
 			$endDate   = !empty($endArr[$idx]) ? $endArr[$idx] : null;
 
@@ -167,9 +178,9 @@ class Users extends Sximo  {
 		if (empty($data)) {
 			return [];
 		}
-		$query = (array)\DB::table('tb_users')
+		$query = (array)\App\Support\Tenancy\TenantScope::table('tb_users')
 		->where('id', $id)
-		->update($data);
+		->update(\App\Support\Tenancy\TenantScope::guardForUpdate('tb_users', $data));
 
 		return $query;
 	}
@@ -201,7 +212,7 @@ class Users extends Sximo  {
 
         $searchValue = request()->input('search.value', '');
 
-        $query = \DB::table('tb_users')
+        $query = \App\Support\Tenancy\TenantScope::table('tb_users')
             ->select(
                 'tb_users.id',
                 'tb_users.username',
@@ -264,7 +275,7 @@ class Users extends Sximo  {
     }
 
     function count_ajax($unit = null) { 
-        $query = \DB::table('tb_users')
+        $query = \App\Support\Tenancy\TenantScope::table('tb_users')
             ->leftJoin('tb_users_groups', 'tb_users_groups.user_id', '=', 'tb_users.id')
             ->leftJoin('user_unit', 'user_unit.id_user', '=', 'tb_users.id')
             ->where(function ($q) {
@@ -281,6 +292,9 @@ class Users extends Sximo  {
     // end Users datatables
 	
 	function deluser($id){
+		// Hanya pengguna milik tenant aktif yang boleh dihapus
+		if(!\App\Support\Tenancy\TenantScope::table('tb_users')->where('id', $id)->exists())
+			return 0;
 		\DB::table('user_unit')->where('id_user', $id)->delete();
 		\DB::table('tb_users_groups')->where('user_id', $id)->delete();
 		$query = \DB::table('tb_users')
@@ -290,7 +304,7 @@ class Users extends Sximo  {
 	}
 
 	function getpositionbycode($code){
-		return \DB::table('unit')
+		return \App\Support\Tenancy\TenantScope::table('unit')
 			->where('unit.unit_code', 'like', '%'.$code.'%')
 			->get();
 	}

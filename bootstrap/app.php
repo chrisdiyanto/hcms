@@ -40,6 +40,9 @@ return Application::configure(dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => url('user/login'));
         $middleware->append(\App\Http\Middleware\Cors::class);
 
+        // Tenant aktif diisi sesudah sesi & auth tersedia (grup web)
+        $middleware->web(append: [\App\Http\Middleware\SetTenantContext::class]);
+
         $middleware->alias([
             'ipblocked' => \App\Http\Middleware\IpblockedMiddleware::class,
             'cors' => \App\Http\Middleware\Cors::class, 

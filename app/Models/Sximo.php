@@ -4,14 +4,39 @@ use App\Http\Controllers\controller;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Support\Tenancy\TenantScope;
 
 class Sximo extends Model {
 
-	public function __construct() 
+	public function __construct()
 	{
 		parent::__construct();
 
-   }	
+   }
+
+	/**
+	 * Isolasi tenant untuk jalur Eloquent (find, destroy, where, create).
+	 * Hanya berlaku bila tabel model punya kolom tenant_id.
+	 */
+	protected static function booted()
+	{
+		static::addGlobalScope('tenant', function (\Illuminate\Database\Eloquent\Builder $builder) {
+			$model = $builder->getModel();
+			if (TenantScope::applies($model->getTable())) {
+				$builder->where($model->qualifyColumn(TenantScope::COLUMN), TenantScope::tenantId());
+			}
+		});
+
+		static::creating(function ($model) {
+			$model->setRawAttributes(TenantScope::fillForInsert($model->getTable(), $model->getAttributes()));
+		});
+	}
+
+	/** queryWhere() model + filter tenant aktif. Semua query mentah Sximo wajib lewat sini. */
+	protected static function scopedWhere()
+	{
+		return static::queryWhere().TenantScope::sql(with(new static)->table);
+	}
 
 	public static function getRows( $args , $gid = 0 )
 	{
@@ -50,7 +75,7 @@ class Sximo extends Model {
 		
         
 		$rows = array();
-	    $result = \DB::select( self::querySelect() . self::queryWhere(). " 
+	    $result = \DB::select( self::querySelect() . static::scopedWhere(). " 
 				{$params} ". self::queryGroup() ." {$orderConditional}  {$limitConditional} ");
 		
 		// Hitung total memakai FROM + JOIN yang sama dengan querySelect(), supaya filter
@@ -58,7 +83,7 @@ class Sximo extends Model {
 		// "Unknown column" di query COUNT. Daftar kolom diganti "1" agar tidak ada
 		// bentrok nama kolom di derived table.
 		$countFrom = preg_replace('/^\s*SELECT\s.*?\bFROM\b/is', 'SELECT 1 FROM', self::querySelect(), 1);
-		$total = \DB::select( "SELECT COUNT(*) AS total FROM ( " . $countFrom . self::queryWhere(). "
+		$total = \DB::select( "SELECT COUNT(*) AS total FROM ( " . $countFrom . static::scopedWhere(). "
 				{$params} ". self::queryGroup() ." ) AS sximo_count" );
 
 		$total = (count($total) != 0 ? $total[0]->total : 0 );
@@ -76,8 +101,8 @@ class Sximo extends Model {
 
 		$result = \DB::select( 
 				self::querySelect() . 
-				self::queryWhere().
-				" AND ".$table.".".$key." = '{$id}' ". 
+				static::scopedWhere().
+				" AND ".$table.".".$key." = ".DB::getPdo()->quote((string) $id)." ". 
 				self::queryGroup()
 			);	
 		if(count($result) <= 0){
@@ -99,8 +124,8 @@ class Sximo extends Model {
 
 		$Qnext = \DB::select( 
 			self::querySelect() . 
-			self::queryWhere().
-			" AND ".$table.".".$key." > '{$id}'  ". 
+			static::scopedWhere().
+			" AND ".$table.".".$key." >  ".DB::getPdo()->quote((string) $id)."  ". 
 			self::queryGroup().' LIMIT 1'
 		);	
 
@@ -109,8 +134,8 @@ class Sximo extends Model {
 		
 		$Qprev  = \DB::select( 
 			self::querySelect() . 
-			self::queryWhere().
-			" AND ".$table.".".$key." < '{$id}'". 
+			static::scopedWhere().
+			" AND ".$table.".".$key." < ".DB::getPdo()->quote((string) $id). 
 			self::queryGroup()." ORDER BY ".$table.".".$key." DESC LIMIT 1"
 		);	
 		if(count($Qprev)>=1)  $prev = $Qprev[0]->{$key};
@@ -146,17 +171,22 @@ class Sximo extends Model {
 			
             // Insert Here 
 			if(isset($data['createdOn'])) $data['createdOn'] = date("Y-m-d H:i:s");	
-			if(isset($data['updatedOn'])) $data['updatedOn'] = date("Y-m-d H:i:s");	
-			 $id = \DB::table( $table)->insertGetId($data);				
-            
+			if(isset($data['updatedOn'])) $data['updatedOn'] = date("Y-m-d H:i:s");
+			 $id = \DB::table( $table)->insertGetId(TenantScope::fillForInsert($table, $data));
+
         } else {
-            // Update here 
+            // Update here
 			// update created field if any
-			if(isset($data['createdOn'])) unset($data['createdOn']);	
-			if(isset($data['updatedOn'])) $data['updatedOn'] = date("Y-m-d H:i:s");			
-			 \DB::table($table)->where($key,$id)->update($data);    
-        }    
-        return $id;    
+			if(isset($data['createdOn'])) unset($data['createdOn']);
+			if(isset($data['updatedOn'])) $data['updatedOn'] = date("Y-m-d H:i:s");
+			// Baris milik tenant lain diperlakukan seperti tidak ada (gagal keras, bukan diam-diam)
+			if(!TenantScope::table($table)->where($key,$id)->exists())
+				abort(404);
+			$data = TenantScope::guardForUpdate($table, $data);
+			if(!empty($data))
+				TenantScope::table($table)->where($key,$id)->update($data);
+        }
+        return $id;
 	}			
 
 	static function makeInfo( $id )
@@ -221,32 +251,34 @@ class Sximo extends Model {
 	}
     static function getComboselect( $params , $limit =null, $parent = null)
     {   
-        $limit = explode(':',$limit);
-        $parent = explode(':',$parent);
+        // Semua bagian berasal dari request: nama tabel/kolom divalidasi sebagai
+        // identifier, nilai memakai binding, dan hasil difilter tenant aktif.
+        $isIdent = function ($v) { return is_string($v) && preg_match('/^[A-Za-z0-9_]+$/', $v); };
+        $limit = explode(':', (string) $limit);
+        $parent = explode(':', (string) $parent);
 
-        if(count($limit) >=3)
+        $table = $params[0] ?? '';
+        if(!$isIdent($table))
+            return collect();
+
+        $query = TenantScope::table($table);
+
+        if(count($limit) >= 4)
         {
-            $table = $params[0]; 
-            $condition = $limit[0]." `".$limit[1]."` ".$limit[2]." '".$limit[3]."' "; 
-            if(count($parent)>=2 )
-            {
-            	$row =  \DB::table($table)->where($parent[0],$parent[1])->get();
-            	 $row =  \DB::select( "SELECT * FROM ".$table." ".$condition ." AND ".$parent[0]." = '".$parent[1]."'");
-            } else  {
-	           $row =  \DB::select( "SELECT * FROM ".$table." ".$condition);
-            }        
-        }else{
-
-            $table = $params[0]; 
-            if(count($parent)>=2 )
-            {
-            	$row =  \DB::table($table)->where($parent[0],$parent[1])->get();
-            } else  {
-	            $row =  \DB::table($table)->get();
-            }	           
+            $operator = strtolower(trim($limit[2]));
+            if(!$isIdent($limit[1]) || !in_array($operator, array('=', '!=', '<>', '<', '>', '<=', '>=', 'like'), true))
+                return collect();
+            $query->where($limit[1], $operator, $limit[3]);
         }
 
-        return $row;
+        if(count($parent) >= 2)
+        {
+            if(!$isIdent($parent[0]))
+                return collect();
+            $query->where($parent[0], $parent[1]);
+        }
+
+        return $query->get();
     }	
 
 	public static function getColoumnInfo( $result )
@@ -377,17 +409,17 @@ class Sximo extends Model {
 
 	    if($id == null )
         {
-			 $id = DB::table( $table)->insertGetId($data);				
-            
+			 $id = DB::table( $table)->insertGetId(TenantScope::fillForInsert($table, $data));
+
         } else {
-            // Update here 	
-			 DB::table($table)->where($key,$id)->update($data);    
-        }    
-        return $id;    
+            // Update here
+			 TenantScope::table($table)->where($key,$id)->update(TenantScope::guardForUpdate($table, $data));
+        }
+        return $id;
 	}
 	public  static function deleteDataRow( $table , $key , $data  )
 	{
 
-	     DB::table($table)->whereIn($key,$data)->delete();       
+	     TenantScope::table($table)->whereIn($key,(array) $data)->delete();
 	}
 }

@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             tb_menuSeeder::class,
             tb_moduleSeeder::class,
             tb_groups_accessSeeder::class,
+            RolesSeeder::class,
             tb_pagesSeeder::class,
             IconcategoriesSeeder::class,
             IconSeeder::class,

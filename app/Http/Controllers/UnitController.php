@@ -133,6 +133,21 @@ class UnitController extends Controller {
 				break;
 			case 'save':
 				$rules = $this->validateForm();
+				// Relasi wajib merujuk data milik tenant aktif
+				$rules['id_corporate'] = array('required', \App\Support\Tenancy\TenantScope::existsRule('corporate', 'id_corporate'));
+				$rules['id_unit_category'] = array('required', \App\Support\Tenancy\TenantScope::existsRule('unit_category', 'id_unit_category'));
+				$rules['id_unit_type'] = array('required', \App\Support\Tenancy\TenantScope::existsRule('unit_type', 'id_unit_type'));
+				if (!empty($request->input('parent_id'))) {
+					$currentUnitId = (int) $request->input('id_unit');
+					$rules['parent_id'] = array(
+						\App\Support\Tenancy\TenantScope::existsRule('unit', 'id_unit'),
+						// Parent tidak boleh unit itu sendiri atau bawahannya (mencegah siklus)
+						function ($attribute, $value, $fail) use ($currentUnitId) {
+							if ($currentUnitId && \App\Domain\Organization\Services\OrgUnitClosure::isSelfOrDescendant($currentUnitId, (int) $value))
+								$fail('Parent unit tidak boleh unit itu sendiri atau unit di bawahnya.');
+						},
+					);
+				}
 				$validator = Validator::make($request->all(), $rules);
 				if ($validator->passes()) 
 				{
@@ -147,6 +162,7 @@ class UnitController extends Controller {
 						}
 					}
 					$id = $this->model->insertRow($data , $request->input( $this->info['key']));
+					\App\Domain\Organization\Services\OrgUnitClosure::rebuild(\App\Support\Tenancy\TenantScope::tenantId());
 					
 					/* Insert logs */
 					$this->model->logs($request , $id);
@@ -263,6 +279,7 @@ class UnitController extends Controller {
 		if(count($request->input('ids')) >=1)
 		{
 			$this->model->destroy($request->input('ids'));
+			\App\Domain\Organization\Services\OrgUnitClosure::rebuild(\App\Support\Tenancy\TenantScope::tenantId());
 			
 			return response()->json(array(
 				'status'=>'success',
@@ -281,7 +298,7 @@ class UnitController extends Controller {
 	public function calculateSlugUnit($parentId = null, $currentId = null)
 	{
 		if (!empty($currentId)) {
-			$currentUnit = \DB::table('unit')->where('id_unit', $currentId)->first();
+			$currentUnit = \App\Support\Tenancy\TenantScope::table('unit')->where('id_unit', $currentId)->first();
 			if ($currentUnit && (string)$currentUnit->parent_id === (string)$parentId && !empty($currentUnit->slug_unit)) {
 				return [
 					'slug_unit' => $currentUnit->slug_unit,
@@ -293,7 +310,7 @@ class UnitController extends Controller {
 		$prefix = 'sgn-';
 
 		if (empty($parentId) || $parentId == '0') {
-			$rootUnits = \DB::table('unit')
+			$rootUnits = \App\Support\Tenancy\TenantScope::table('unit')
 				->where(function($query) {
 					$query->whereNull('parent_id')
 						  ->orWhere('parent_id', 0);
@@ -316,7 +333,7 @@ class UnitController extends Controller {
 			$unitCode = 'KP' . sprintf('%02d', $nextNum);
 			$slugUnit = $prefix . $unitCode;
 		} else {
-			$parentUnit = \DB::table('unit')->where('id_unit', $parentId)->first();
+			$parentUnit = \App\Support\Tenancy\TenantScope::table('unit')->where('id_unit', $parentId)->first();
 			if (!$parentUnit) {
 				return [
 					'error' => 'Parent unit tidak ditemukan'
@@ -325,7 +342,7 @@ class UnitController extends Controller {
 
 			$parentCode = !empty($parentUnit->unit_code) ? $parentUnit->unit_code : str_replace($prefix, '', $parentUnit->slug_unit);
 
-			$children = \DB::table('unit')
+			$children = \App\Support\Tenancy\TenantScope::table('unit')
 				->where('parent_id', $parentId)
 				->get();
 

@@ -133,11 +133,26 @@ class AllunitController extends Controller {
 				break;
 			case 'save':
 				$rules = $this->validateForm();
+				// Relasi wajib milik tenant aktif; parent tidak boleh membentuk siklus
+				foreach (array('id_corporate' => 'corporate', 'id_unit_category' => 'unit_category', 'id_unit_type' => 'unit_type') as $field => $table)
+					if ($request->filled($field))
+						$rules[$field] = array(\App\Support\Tenancy\TenantScope::existsRule($table, $field));
+				if (!empty($request->input('parent_id'))) {
+					$currentUnitId = (int) $request->input('id_unit');
+					$rules['parent_id'] = array(
+						\App\Support\Tenancy\TenantScope::existsRule('unit', 'id_unit'),
+						function ($attribute, $value, $fail) use ($currentUnitId) {
+							if ($currentUnitId && \App\Domain\Organization\Services\OrgUnitClosure::isSelfOrDescendant($currentUnitId, (int) $value))
+								$fail('Parent unit tidak boleh unit itu sendiri atau unit di bawahnya.');
+						},
+					);
+				}
 				$validator = Validator::make($request->all(), $rules);
 				if ($validator->passes()) 
 				{
 					$data = $this->validatePost( $request );
 					$id = $this->model->insertRow($data , $request->input( $this->info['key']));
+					\App\Domain\Organization\Services\OrgUnitClosure::rebuild(\App\Support\Tenancy\TenantScope::tenantId());
 					
 					/* Insert logs */
 					$this->model->logs($request , $id);
@@ -254,6 +269,7 @@ class AllunitController extends Controller {
 		if(count($request->input('ids')) >=1)
 		{
 			$this->model->destroy($request->input('ids'));
+			\App\Domain\Organization\Services\OrgUnitClosure::rebuild(\App\Support\Tenancy\TenantScope::tenantId());
 			
 			return response()->json(array(
 				'status'=>'success',

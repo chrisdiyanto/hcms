@@ -11,6 +11,8 @@
 				},
 	"access"	: {
 						"is_global"	: "Global" ,
+						"is_approve"	: "Approve",
+						"is_sensitive"	: "Data Sensitif",
 						"is_view"	: "View",
 						"is_detail"	: "Detail",
 						"is_add"	: "Create",

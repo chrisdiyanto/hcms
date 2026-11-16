@@ -19,6 +19,8 @@
     </source>
     <php>
         <server name="APP_ENV" value="testing"/>
+        <!-- Database terpisah; jangan pernah menjalankan tes di database dev/produksi -->
+        <server name="DB_DATABASE" value="hcms_test"/>
         <server name="BCRYPT_ROUNDS" value="4"/>
         <server name="CACHE_DRIVER" value="array"/>
         <server name="MAIL_DRIVER" value="array"/>

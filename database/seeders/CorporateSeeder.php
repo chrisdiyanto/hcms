@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Schema;
 
 class CorporateSeeder extends Seeder
 {
+    use Concerns\WithDefaultTenant;
+
     /**
      * Data dummy corporate + kelengkapan konfigurasi modul Sximo "corporate".
      *
@@ -56,13 +58,16 @@ class CorporateSeeder extends Seeder
             ),
         );
 
+        $tenantId = $this->defaultTenantId();
+
         foreach ($rows as $row) {
             $id = $row['id_corporate'];
             unset($row['id_corporate']);
             $exists = DB::table('corporate')->where('id_corporate', $id)->exists();
             DB::table('corporate')->updateOrInsert(
                 array('id_corporate' => $id),
-                $row + array('updated_at' => $now) + ($exists ? array() : array('created_at' => $now))
+                $row + array('tenant_id' => $tenantId, 'updated_at' => $now)
+                    + ($exists ? array() : array('created_at' => $now, 'uuid' => (string) \Illuminate\Support\Str::uuid7()))
             );
         }
 

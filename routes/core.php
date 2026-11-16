@@ -7,7 +7,17 @@ Route::resource('core/users', 'Core\UsersController');
 Route::get('core/users/blast', 'Core\UsersController@getBlast');
 // -- Post Method --
 Route::post('core/users/doblast', 'Core\UsersController@postDoblast');
+// Cakupan data (user_data_scopes)
+Route::get('core/users/{user}/scopes', 'Core\DataScopesController@index')->whereNumber('user');
+Route::post('core/users/{user}/scopes', 'Core\DataScopesController@store')->whereNumber('user');
+Route::delete('core/users/{user}/scopes/{scope}', 'Core\DataScopesController@destroy')->whereNumber(['user', 'scope']);
 /* End Users Routes */
+
+//-------------------------------------------------------------------------
+/* Start Tenants Routes (Superadmin) */
+Route::resource('core/tenants', 'Core\TenantsController')->only(['index', 'create', 'store', 'edit', 'update']);
+Route::post('core/tenants/{tenant}/status', 'Core\TenantsController@status');
+/* End Tenants Routes */
 
 //-------------------------------------------------------------------------
 /* Start Groups Routes */

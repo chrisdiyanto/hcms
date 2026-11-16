@@ -136,7 +136,8 @@ class CorporateController extends Controller {
 				$currentId = (int) $request->input($this->info['key']);
 				// Kolom code & slug unik di database: validasi di sini agar tidak berakhir sebagai error SQL
 				$rules['corporate_name'] = 'required|max:255';
-				$rules['code'] = 'required|max:20|unique:corporate,code'.($currentId ? ','.$currentId.',id_corporate' : '');
+				// Kode company unik per tenant
+				$rules['code'] = array('required', 'max:20', \App\Support\Tenancy\TenantScope::uniqueRule('corporate', 'code')->ignore($currentId ?: null, 'id_corporate'));
 				$validator = Validator::make($request->all(), $rules);
 				if ($validator->passes())
 				{
@@ -179,7 +180,7 @@ class CorporateController extends Controller {
 		$base = \Illuminate\Support\Str::limit(\Illuminate\Support\Str::slug((string) $name), 90, '') ?: 'corporate';
 		$slug = $base;
 		$i = 2;
-		while (\DB::table('corporate')->where('slug_corporate', $slug)->where('id_corporate', '!=', (int) $currentId)->exists()) {
+		while (\App\Support\Tenancy\TenantScope::table('corporate')->where('slug_corporate', $slug)->where('id_corporate', '!=', (int) $currentId)->exists()) {
 			$slug = $base.'-'.$i++;
 		}
 		return $slug;

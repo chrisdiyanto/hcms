@@ -94,7 +94,7 @@ Durasi mengikuti blueprint (MVP P0 = 40 minggu, tim ±12 orang). Bila tim lebih 
 ### Fase 0 — Blueprint & persiapan master (minggu 1–6)
 
 **Bisnis/analisis**
-- Kunci kebijakan penilaian: bobot What/How (70/30 atau 60/30/10), cap, band rating, tabel konversi, aturan prorata.
+- Kunci kebijakan penilaian: bobot skor 60/30/10 (sudah diputuskan; tinggal definisi dimensi ketiga), cap, band rating, tabel konversi, aturan prorata.
 - ERD detail 14 domain dan data dictionary, disesuaikan dengan tabel master yang dipakai ulang (bagian A).
 - Wireframe portal: ESS, Manager, HR, Executive, di atas layout Sximo (`layouts/app.blade.php`).
 - Audit kualitas data pegawai lama, verifikasi hukum PDP.
@@ -118,10 +118,12 @@ Urutan pengerjaan:
    - Migration `tenants`, `tenant_settings`; tambah `tenant_id`, `settings` ke `corporate` (company).
    - Middleware tenant context, trait `BelongsToTenant`, modifikasi base `Sximo` (B.1).
    - Modul Sximo: *Tenant* (Super Admin), *Company* (pakai `CorporateController` yang ada).
+   - **Status 2026-11-16: selesai, 29 tes lulus, diuji manual di browser (buat tenant, isolasi Company, tangguhkan/aktifkan).** Implementasi: `App\Support\Tenancy\TenantScope` (pengganti trait `BelongsToTenant`: filter di base `Sximo` + global scope Eloquent + helper global), middleware `SetTenantContext`, `core/tenants` (Superadmin) dengan action `CreateTenant` (tenant + company pertama + Tenant Administrator), menu Tenant & Company. `user_unit` dan `tb_notification` belum diberi `tenant_id` (diakses lewat id pengguna).
 2. **IAM**
    - Seed 15 group, perluas `access_data` (B.2), `user_data_scopes`, `login_histories`.
    - MFA (TOTP) untuk HR/Executive/Admin/Auditor/DPO; SSO OIDC via Socialite.
    - Break-glass Super Admin (alasan, batas waktu, notifikasi ke Tenant Admin).
+   - **Status 2026-11-16 — gelombang 1 selesai (38 tes lulus, dicek di browser):** 15 peran di `tb_groups` dengan kolom `code`, `data_scope` (all/scoped/own), `requires_mfa` (`App\Support\Security\Roles`); izin `is_approve` & `is_sensitive` di template permission (ekspor tetap memakai `is_excel/is_csv/is_pdf`); `org_unit_closure` + `user_data_scopes` + `App\Support\Security\DataScope`; halaman `core/users/{id}/scopes` (tidak bisa mengubah cakupan sendiri); `login_histories`. **Gelombang 2 (belum):** MFA TOTP untuk peran `requires_mfa`, break-glass + akun platform tanpa tenant, SSO OIDC/SAML.
 3. **Organization & Job Architecture**
    - Perluas `unit` (tenant_id, effective dating), `org_unit_closure` + service rebuild closure, `organization_histories`.
    - Tabel baru: `job_families`, `jobs`, `job_levels`, `job_grades`, `job_descriptions`, `job_requirements`, `positions` (kode, unit, job, grade, status, kritis, lokasi, effective date), `position_relationships` (solid/dotted), `position_histories`.
@@ -213,9 +215,9 @@ Recruitment & Onboarding → Attendance & Leave (integrasi mesin absensi via API
 
 ## E. Keputusan yang perlu diambil sebelum Fase 1
 
-1. MySQL (isolasi di aplikasi) atau pindah ke PostgreSQL + RLS (butuh penulisan ulang inti Sximo)?
+1. ~~MySQL atau PostgreSQL + RLS?~~ Diputuskan: **MySQL**, isolasi tenant di aplikasi.
 2. ~~Blade + Vue island atau Inertia penuh?~~ Diputuskan: Blade + jQuery bawaan master, tanpa Vue, ditambah Alpine.js untuk layar rumit.
-3. Model skor default 70/30 atau 60/30/10?
+3. ~~Model skor default?~~ Diputuskan: **60/30/10** (lihat ADR 0001 no. 8).
 4. Pasar awal: swasta saja atau juga BUMN/pemerintah?
 5. Region data dan penyedia LLM (Gemini sudah terpasang — perlu penilaian transfer data ke luar negeri sesuai PDP).
 6. Usia pensiun dan aturan cuti default per company.

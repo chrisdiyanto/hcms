@@ -64,7 +64,7 @@ if(!function_exists('get_user_data')) {
         if(empty($id)){
             $id = get_session('uid');
         }
-        $query = DB::table('tb_users')
+        $query = \App\Support\Tenancy\TenantScope::table('tb_users')
             ->select(
                 'tb_users.*',
                 'user_unit.id_unit',
@@ -274,12 +274,12 @@ if (!function_exists('db_get_all_data')) {
             };
 
             if(empty($where)){
-                $query = \DB::table($table_name)
+                $query = \App\Support\Tenancy\TenantScope::table($table_name)
                     ->get();
             }else{
 
                 if(is_array($where)){
-                    $query = \DB::table($table_name)
+                    $query = \App\Support\Tenancy\TenantScope::table($table_name)
                         ->where(function ($query) use ($where, $normalizeWhere) {
                             foreach ($where as $item) {
                                 $query->whereRaw($normalizeWhere($item));
@@ -287,7 +287,7 @@ if (!function_exists('db_get_all_data')) {
                         })
                         ->get();
                 }else{
-                    $query = \DB::table($table_name)
+                    $query = \App\Support\Tenancy\TenantScope::table($table_name)
                         ->whereRaw($normalizeWhere($where))
                         ->get();
                 }
@@ -323,7 +323,7 @@ if (!function_exists('db_get_value')) {
                 return $clause;
             };
 
-            $baseQuery = \DB::table($table_name);
+            $baseQuery = \App\Support\Tenancy\TenantScope::table($table_name);
             if ($table_name === 'tb_users' && in_array($field, ['id_unit', 'id_position'])) {
                 $baseQuery->leftJoin('user_unit', 'user_unit.id_user', '=', 'tb_users.id')
                           ->select('user_unit.' . $field);
@@ -452,7 +452,7 @@ function logout() {
 if(!function_exists('getcorporate')) {
     function getcorporate($field = null){
         
-            $query = \DB::table('corporate')
+            $query = \App\Support\Tenancy\TenantScope::table('corporate')
                     ->select('*')
                     ->orderBy('id_corporate', 'asc')
                     ->first();
@@ -474,7 +474,7 @@ if(!function_exists('get_unit')) {
         }
 
         if(!empty($id)){
-            $query = \DB::table('unit')
+            $query = \App\Support\Tenancy\TenantScope::table('unit')
                     ->select('unit.*')
                     ->where('id_unit', $id)
                     ->first();
@@ -493,7 +493,7 @@ if(!function_exists('get_unitbyslug')) {
     function get_unitbyslug($slug = null, $field = null){
         
         if(!empty($slug)){
-            $query = \DB::table('unit')
+            $query = \App\Support\Tenancy\TenantScope::table('unit')
                     ->select('unit.*')
                     ->where('slug_unit', $slug)
                     ->first();
@@ -514,7 +514,7 @@ if(!function_exists('getusername')) {
             $id = session('uid');
         }
 
-            $query = \DB::table('tb_users')
+            $query = \App\Support\Tenancy\TenantScope::table('tb_users')
                     ->where('id', $id)
                     ->first();
         if(!empty($query)){
@@ -528,7 +528,7 @@ if(!function_exists('groupaccess')) {
         if(empty($gid)){
             $gid = get_session('gid');
         }
-        $query = \DB::table('tb_users')
+        $query = \App\Support\Tenancy\TenantScope::table('tb_users')
             ->join('tb_users_groups', 'tb_users_groups.user_id', '=', 'tb_users.id')
             ->select('tb_users.email')
             ->where('tb_users_groups.group_id', 3)

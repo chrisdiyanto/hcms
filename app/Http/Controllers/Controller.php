@@ -804,9 +804,13 @@ abstract class Controller extends BaseController {
 		$fields = array_column($this->info['config']['forms'], 'field');
 		if($path && in_array($field, $fields, true))
 		{
+			// Pastikan baris milik tenant aktif sebelum menghapus file
+			$owned = \App\Support\Tenancy\TenantScope::table($this->info['table'])->where($this->info['key'],$id);
+			if(!$owned->exists())
+				return response()->json(array('status'=>'error'), 404);
 			if(unlink($path))
 			{
-				\DB::table($this->info['table'])->where($this->info['key'],$id)->update(array($field=>''));
+				$owned->update(array($field=>''));
 			}
 			return response()->json(array('status'=>'success'));
 		} else {
@@ -1054,7 +1058,7 @@ function detailviewsave( $model ,$request , $detail , $id )
 			$global	= (isset($access['is_global']) ? $access['is_global'] : 0 );
 			$total = count($request['counter']);
 			$mkeys = array();
-			$getAllCurrentData = \DB::table($detail['table'])->where($detail['master_key'] , $id  )->get();
+			$getAllCurrentData = \App\Support\Tenancy\TenantScope::table($detail['table'])->where($detail['master_key'] , $id  )->get();
 
 			$pkeys = array();
 			for($i=0; $i<$total;$i++) 
@@ -1064,7 +1068,7 @@ function detailviewsave( $model ,$request , $detail , $id )
 				if(!in_array($keys->{$relation_key} , $pkeys))		
 				{	
 					// Remove If items is not resubmited
-					\DB::table($detail['table'])->where($relation_key,$keys->{$relation_key})->delete();
+					\App\Support\Tenancy\TenantScope::table($detail['table'])->where($relation_key,$keys->{$relation_key})->delete();
 				}
 			}
 
@@ -1091,13 +1095,13 @@ function detailviewsave( $model ,$request , $detail , $id )
 						$data['entry_by'] = \Session::get('uid');
 					
 					// Check if data currentry exist
-					$check = \DB::table($detail['table'])->where($relation_key , $request['bulk_'.$relation_key][$i]  )->get();
+					$check = \App\Support\Tenancy\TenantScope::table($detail['table'])->where($relation_key , $request['bulk_'.$relation_key][$i]  )->get();
 					if(count($check) >=1)
 					{
-						\DB::table($detail['table'])->where($relation_key ,  $request['bulk_'.$relation_key][$i] )->update($data);
+						\App\Support\Tenancy\TenantScope::table($detail['table'])->where($relation_key ,  $request['bulk_'.$relation_key][$i] )->update(\App\Support\Tenancy\TenantScope::guardForUpdate($detail['table'], $data));
 					} else {
 						unset($data[$relation_key]);
-						\DB::table($detail['table'])->insert($data);	
+						\DB::table($detail['table'])->insert(\App\Support\Tenancy\TenantScope::fillForInsert($detail['table'], $data));	
 					}
 				}			
 
@@ -1310,11 +1314,15 @@ function detailviewsave( $model ,$request , $detail , $id )
 		$ids = array_values(array_filter((array) $request->input('ids'), 'is_scalar'));
 		if(count($ids) >=1)
 		{
-			// Pakai binding parameter, jangan gabungkan ids langsung ke SQL
-			$toCopy = implode(",", array_fill(0, count($ids), '?'));
-			$sql = "INSERT INTO ".  $this->info['table'] ." (".implode(",", $columns).") ";
-			$sql .= " SELECT ".implode(",", $columns)." FROM ". $this->info['table']." WHERE ".$this->info['key']." IN (".$toCopy.")";
-			\DB::insert($sql, $ids);
+			// Salin per baris: hanya baris milik tenant aktif, tenant_id & uuid baru diisi ulang
+			$table = $this->info['table'];
+			$rows = \App\Support\Tenancy\TenantScope::table($table)->whereIn($this->info['key'], $ids)->get($columns);
+			foreach($rows as $row)
+			{
+				$data = (array) $row;
+				unset($data['uuid']);
+				\DB::table($table)->insert(\App\Support\Tenancy\TenantScope::fillForInsert($table, $data));
+			}
 			return ['message'=>__('core.note_success'),'status'=>'success'];
 		} else {
 			return ['message'=>__('Please select row to copy'),'status'=>'error'];

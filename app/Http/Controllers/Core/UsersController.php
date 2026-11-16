@@ -292,13 +292,13 @@ class UsersController extends Controller {
 				{
 					if($request->input('uStatus') == 'all')
 					{
-						$users = \DB::table('tb_users')
+						$users = \App\Support\Tenancy\TenantScope::table('tb_users')
 							->join('tb_users_groups', 'tb_users_groups.user_id', '=', 'tb_users.id')
 							->where('tb_users_groups.group_id','=',$groups[$i])
 							->select('tb_users.*')
 							->get();
 					} else {
-						$users = \DB::table('tb_users')
+						$users = \App\Support\Tenancy\TenantScope::table('tb_users')
 							->join('tb_users_groups', 'tb_users_groups.user_id', '=', 'tb_users.id')
 							->where('tb_users.active','=',$request->input('uStatus'))
 							->where('tb_users_groups.group_id','=',$groups[$i])
@@ -403,6 +403,7 @@ class UsersController extends Controller {
 								}
 								if($this->access['is_edit'] ==1){
 									$btn .= "<li class='nav-item'><a  href='".$url."' class='nav-link tips' title='Edit'> Edit</a></li>";
+									$btn .= "<li class='nav-item'><a  href='".url('core/users/'.$item->id.'/scopes')."' class='nav-link tips' title='Cakupan data'> Cakupan data</a></li>";
 								}
 								if($this->access['is_remove'] ==1):
 									$btn .="<li class='nav-item'><a href='javascript:void(0)'  onclick='hapususer(\"".$item->id."\");' class='nav-link tips' title='Hapus'>
@@ -429,6 +430,10 @@ class UsersController extends Controller {
     }
 
 	public function deluser(Request $request){
+		$this->access = $this->model->validAccess($this->info['id'] , session('gid'));
+		if(empty($this->access['is_remove']))
+			return response()->json(array('status' => 'error', 'message' => __('core.note_restric'), 'success' => false), 403);
+
 		$validator = Validator::make($request->all(), [
 			'user_id'	=> 'required|max:11',
         ]);

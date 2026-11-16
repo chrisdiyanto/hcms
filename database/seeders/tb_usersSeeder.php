@@ -7,13 +7,15 @@ use Illuminate\Support\Facades\DB;
 
 class tb_usersSeeder extends Seeder
 {
+    use Concerns\WithDefaultTenant;
+
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
         DB::table('tb_users')->truncate();
-        DB::table('tb_users')->insert(array (
+        DB::table('tb_users')->insert($this->withTenant(array (
   0 => 
   array (
     'id' => 1,
@@ -37,7 +39,7 @@ class tb_usersSeeder extends Seeder
     'config' => '',
     'entry_by' => NULL,
   ),
-));
+), false));
 
         if (\Schema::hasTable('user_unit')) {
             DB::table('user_unit')->where('id_user', 1)->delete();

@@ -7,13 +7,15 @@ use Illuminate\Support\Facades\DB;
 
 class unit_typeSeeder extends Seeder
 {
+    use Concerns\WithDefaultTenant;
+
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
         DB::table('unit_type')->truncate();
-        DB::table('unit_type')->insert(array (
+        DB::table('unit_type')->insert($this->withTenant(array (
   0 => 
   array (
     'id_unit_type' => 1,
@@ -28,6 +30,6 @@ class unit_typeSeeder extends Seeder
     'keterangan' => 'Adhoc/By Project',
     'status' => 1,
   ),
-));
+), false));
     }
 }

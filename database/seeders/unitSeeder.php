@@ -7,13 +7,15 @@ use Illuminate\Support\Facades\DB;
 
 class unitSeeder extends Seeder
 {
+    use Concerns\WithDefaultTenant;
+
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
         DB::table('unit')->truncate();
-        DB::table('unit')->insert(array (
+        DB::table('unit')->insert($this->withTenant(array (
   0 => 
   array (
     'id_unit' => 1,
@@ -29,6 +31,6 @@ class unitSeeder extends Seeder
     'id_unit_type' => 1,
     'status' => 1,
   ),
-));
+), true));
     }
 }

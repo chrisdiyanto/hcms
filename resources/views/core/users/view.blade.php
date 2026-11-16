@@ -28,10 +28,10 @@
 					@php
 						$corpName = '-';
 						if(!empty($row->id_corporate)) {
-							$cor = \DB::table('corporate')->where('id_corporate', $row->id_corporate)->first();
+							$cor = \App\Support\Tenancy\TenantScope::table('corporate')->where('id_corporate', $row->id_corporate)->first();
 							$corpName = $cor->corporate_name ?? '-';
 						} elseif(session('cid')) {
-							$cor = \DB::table('corporate')->where('id_corporate', session('cid'))->first();
+							$cor = \App\Support\Tenancy\TenantScope::table('corporate')->where('id_corporate', session('cid'))->first();
 							$corpName = $cor->corporate_name ?? '-';
 						}
 					@endphp
