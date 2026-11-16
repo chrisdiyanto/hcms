@@ -24,3 +24,20 @@ Route::post('employees/{employee}/assignments', 'Employee\EmployeeAssignmentsCon
 Route::post('employees/{employee}/assignments/{assignment}/end', 'Employee\EmployeeAssignmentsController@end')->whereNumber(['employee', 'assignment']);
 Route::post('employees/{employee}/terminate', 'Employee\EmployeeAssignmentsController@terminate')->whereNumber('employee');
 Route::post('employees/{employee}/terminations/{termination}/cancel', 'Employee\EmployeeAssignmentsController@cancelTermination')->whereNumber(['employee', 'termination']);
+
+// Employee Self Service
+Route::get('ess/profile', 'Employee\EssController@profile');
+Route::post('ess/change-requests', 'Employee\EssController@submit')->middleware('throttle:10,1,ess');
+
+// Workflow & approval
+Route::get('workflow/tasks', 'Workflow\TasksController@index');
+Route::get('workflow/tasks/{task}', 'Workflow\TasksController@show')->whereNumber('task');
+Route::post('workflow/tasks/{task}/approve', 'Workflow\TasksController@approve')->whereNumber('task');
+Route::post('workflow/tasks/{task}/reject', 'Workflow\TasksController@reject')->whereNumber('task');
+Route::post('workflow/requests/{instance}/cancel', 'Workflow\TasksController@cancel')->whereNumber('instance');
+Route::get('workflow/delegations', 'Workflow\DelegationsController@index');
+Route::post('workflow/delegations', 'Workflow\DelegationsController@store');
+Route::post('workflow/delegations/{delegation}/revoke', 'Workflow\DelegationsController@revoke')->whereNumber('delegation');
+Route::get('workflow/definitions', 'Workflow\DefinitionsController@index');
+Route::get('workflow/definitions/{code}/edit', 'Workflow\DefinitionsController@edit')->where('code', '[a-z_]+');
+Route::put('workflow/definitions/{code}', 'Workflow\DefinitionsController@update')->where('code', '[a-z_]+');

@@ -24,3 +24,11 @@ Artisan::command('hcms:process-terminations', function (App\Domain\Employee\Acti
 })->describe('Proses terminasi pegawai terjadwal yang sudah jatuh tempo');
 
 Illuminate\Support\Facades\Schedule::command('hcms:process-terminations')->dailyAt('00:15')->withoutOverlapping()->onOneServer();
+
+// HCMS: eskalasi tugas persetujuan yang melewati SLA (blueprint modul 5)
+Artisan::command('hcms:escalate-approvals', function (App\Domain\Workflow\WorkflowEngine $engine) {
+    $count = $engine->escalateOverdue();
+    $this->info("Tugas dieskalasi: {$count}");
+})->describe('Eskalasi tugas persetujuan yang melewati batas waktu (SLA)');
+
+Illuminate\Support\Facades\Schedule::command('hcms:escalate-approvals')->hourly()->withoutOverlapping()->onOneServer();

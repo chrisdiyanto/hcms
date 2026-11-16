@@ -22,6 +22,7 @@ final class HcmsModules
 
     /** Menu induk (tanpa modul) */
     private const PARENTS = [
+        'layanan' => ['name' => 'Layanan Mandiri', 'id' => 'Layanan Mandiri', 'icon' => 'fa fa-user-circle', 'position' => 'sidebar'],
         'kepegawaian' => ['name' => 'Kepegawaian', 'id' => 'Kepegawaian', 'icon' => 'fa fa-users', 'position' => 'sidebar'],
         'organisasi' => ['name' => 'Organisasi', 'id' => 'Organisasi', 'icon' => 'fa fa-sitemap', 'position' => 'sidebar'],
     ];
@@ -51,6 +52,16 @@ final class HcmsModules
                 'access' => $hrManage + $orgRead],
             'positions' => ['title' => 'Posisi', 'table' => 'positions', 'url' => 'organization/positions', 'parent' => 'organisasi', 'icon' => 'fa fa-user-tie', 'title_id' => 'Posisi',
                 'access' => $hrManage + $orgRead],
+
+            // Layanan Mandiri: halaman pribadi (tanpa baris tb_module; akses dicek per data)
+            'ess' => ['title' => 'Profil Saya', 'table' => 'employees', 'url' => 'ess/profile', 'parent' => 'layanan', 'icon' => 'fa fa-user', 'title_id' => 'Profil Saya',
+                'access' => self::everyone(), 'register_module' => false],
+            'approvaltasks' => ['title' => 'Tugas Persetujuan', 'table' => 'approval_tasks', 'url' => 'workflow/tasks', 'parent' => 'layanan', 'icon' => 'fa fa-check-square', 'title_id' => 'Tugas Persetujuan',
+                'access' => self::everyone(), 'register_module' => false],
+            'delegations' => ['title' => 'Delegasi', 'table' => 'approval_delegations', 'url' => 'workflow/delegations', 'parent' => 'layanan', 'icon' => 'fa fa-share', 'title_id' => 'Delegasi',
+                'access' => self::everyone(), 'register_module' => false],
+            'workflows' => ['title' => 'Alur Persetujuan', 'table' => 'workflow_definitions', 'url' => 'workflow/definitions', 'parent' => 'Control Panel', 'icon' => 'fa fa-project-diagram', 'title_id' => 'Alur Persetujuan',
+                'access' => [Roles::SUPER_ADMIN => self::FULL, Roles::TENANT_ADMIN => self::FULL]],
 
             // Employee Management — isi daftar tetap dibatasi data scope tiap peran
             'employees' => ['title' => 'Pegawai', 'table' => 'employees', 'url' => 'employees', 'parent' => 'kepegawaian', 'icon' => 'fa fa-id-card', 'title_id' => 'Pegawai',
@@ -167,6 +178,14 @@ final class HcmsModules
                 ['access_data' => json_encode(array_fill_keys($tasks, '1') + array_fill_keys(self::FULL, '0'))]
             );
         }
+    }
+
+    /** Semua peran manusia (bukan API Client), untuk menu halaman pribadi. */
+    private static function everyone(): array
+    {
+        $codes = array_diff(array_keys(Roles::definitions()), [Roles::API_CLIENT]);
+
+        return array_fill_keys($codes, []);
     }
 
     private static function menuAccess(array $roleCodes): array

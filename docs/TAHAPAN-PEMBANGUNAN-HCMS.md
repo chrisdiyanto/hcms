@@ -142,6 +142,7 @@ Urutan pengerjaan:
    - Approver ditentukan dari **posisi**; posisi kosong → naik ke atasan berikutnya atau Plt.
    - Eskalasi SLA via scheduler; notifikasi in-app (`tb_notification`) + email (job antrean).
    - Halaman "Tugas Saya" untuk semua portal.
+   - **Status 2026-11-16 — gelombang 1 selesai (75 tes lulus; belum dilihat di browser):** `App\Domain\Workflow\WorkflowEngine` + `ApproverResolver` (approver dari posisi: primer/Plt. aktif dengan akun aktif; posisi kosong naik solid line; fallback HR Admin → Tenant Admin; pengaju tidak pernah jadi approver; delegasi bertanggal maks. 90 hari; beberapa kandidat → keputusan pertama menutup langkah); alur berversi per tenant (`workflow_definitions/versions`, halaman Control Panel › Alur Persetujuan); jejak `approval_actions` dengan posisi pemberi keputusan; eskalasi SLA `php artisan hcms:escalate-approvals` tiap jam (maks. 3 tingkat); notifikasi in-app `tb_notification`. Menu "Layanan Mandiri": Profil Saya (ESS change request — subjek workflow pertama, diterapkan beserta riwayat), Tugas Persetujuan, Delegasi. **Belum:** notifikasi email + `notification_templates`, `sla_policies` terpisah (SLA saat ini per langkah), approval paralel "semua harus setuju".
 6. **Audit trail & ekspor**
    - `audit_logs` (before/after), `access_logs` untuk akses data sensitif, `data_export_logs` (alasan + persetujuan + watermark di export Excel/PDF Sximo).
 7. **Alat migrasi data**
