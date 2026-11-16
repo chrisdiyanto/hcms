@@ -11,7 +11,8 @@
 		<div class="d-flex justify-content-between flex-wrap gap-2">
 			<div>
 				<h5 class="card-title mb-1">{{ $r->period_name }}</h5>
-				<div class="small text-muted">Revisi {{ $r->revision }}{{ $r->is_current ? '' : ' (digantikan)' }} · disahkan {{ $r->published_at }}</div>
+				<div class="small text-muted">Revisi {{ $r->revision }}{{ $r->is_current ? '' : ' (digantikan)' }} ·
+					@if($r->status === 'final')<span class="badge bg-success">final</span> disahkan {{ $r->finalized_at }}@else<span class="badge bg-warning text-dark">sementara</span> diumumkan {{ $r->published_at }}@endif</div>
 				@if($r->reason)<div class="small">{{ $r->reason }}</div>@endif
 			</div>
 			<div class="text-end">
@@ -22,7 +23,7 @@
 		@if($appeal)
 			<div class="alert alert-light border small mt-2 mb-0"><strong>Keberatan:</strong> {{ $appealStatus[$appeal->status] }}
 				@if($appeal->decision_note)<div>Keputusan: {{ $appeal->decision_note }}</div>@endif</div>
-		@elseif($r->is_current && $r->rated && now()->toDateString() <= $r->appeal_deadline && !$ratings->where('period_id', $r->period_id)->pluck('id')->intersect($appeals->keys())->count())
+		@elseif($r->is_current && $r->rated && $r->status === 'provisional' && now()->toDateString() <= $r->appeal_deadline && !$ratings->where('period_id', $r->period_id)->pluck('id')->intersect($appeals->keys())->count())
 			<details class="mt-2">
 				<summary class="small">Ajukan keberatan (s.d. {{ $r->appeal_deadline }})</summary>
 				<form method="POST" action="{{ url('performance/ratings/'.$r->id.'/appeal') }}" class="mt-2">

@@ -48,10 +48,10 @@ class DashboardController extends Controller
         $assessmentCounts = TenantScope::table('performance_assessments')->whereIn('plan_id', $approved)->selectRaw('status, COUNT(*) n')->groupBy('status')->pluck('n', 'status');
 
         // Skor & band per pegawai
-        if ($period->status === 'closed') {
+        if (in_array($period->status, ['appeal', 'closed'], true)) {
             $scores = TenantScope::table('performance_ratings')->where('period_id', $period->id)->where('is_current', true)->where('rated', true)
                 ->whereIn('employee_id', $scope)->get(['employee_id', 'final_score as score', 'band']);
-            $source = 'Rating yang disahkan';
+            $source = $period->status === 'closed' ? 'Rating yang disahkan' : 'Rating sementara (tahap keberatan)';
         } else {
             $scores = TenantScope::table('performance_assessments')->join('performance_plans', 'performance_plans.id', '=', 'performance_assessments.plan_id')
                 ->whereIn('performance_plans.id', $approved)->whereNotNull('performance_assessments.final_score')

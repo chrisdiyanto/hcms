@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Performance;
 
+use App\Domain\Performance\Services\PerformancePlans;
 use App\Support\Security\Roles;
 use App\User;
 use Illuminate\Database\QueryException;
@@ -169,28 +170,18 @@ class PerformanceCycleTest extends TestCase
         $this->assertSame(['89.99', 'exceeds'], [$this->assessment()->calibrated_score, $this->assessment()->calibrated_band]);
         $this->assertSame(1, DB::table('calibration_adjustments')->where('from_band', 'outstanding')->where('to_band', 'exceeds')->count());
 
-        // ---- Pengesahan: sesi kalibrasi harus ditutup; rating + snapshot immutable
+        // ---- Pengumuman rating sementara: sesi kalibrasi harus ditutup; belum ada snapshot
         $this->post('/performance/periods/'.$this->period.'/publish')->assertSessionHasErrors('period');
         $this->post('/performance/calibration/sessions/'.$session.'/close')->assertSessionHasNoErrors();
         $this->post('/performance/periods/'.$this->period.'/publish')->assertSessionHasNoErrors();
-        $this->assertSame('closed', DB::table('performance_periods')->where('id', $this->period)->value('status'));
+        $this->assertSame('appeal', DB::table('performance_periods')->where('id', $this->period)->value('status'));
         $rating = DB::table('performance_ratings')->where('employee_id', $this->employees['ANL'])->first();
-        $this->assertSame(['89.99', 'exceeds', 'Exceeds Expectation', now()->addDays(14)->toDateString()],
-            [$rating->final_score, $rating->band, $rating->band_label, $rating->appeal_deadline]);
-        $snapshot = DB::table('performance_snapshots')->where('rating_id', $rating->id)->first();
-        $this->assertSame(hash('sha256', $snapshot->payload), $snapshot->checksum);
-        $payload = json_decode($snapshot->payload, true);
-        $this->assertSame(1, $payload['policy']['_version']);
-        $this->assertCount(1, $payload['calibrations']);
-        try {
-            DB::table('performance_snapshots')->where('id', $snapshot->id)->update(['checksum' => 'x']);
-            $this->fail('Snapshot seharusnya tidak dapat diubah');
-        } catch (QueryException $e) {
-            $this->assertStringContainsString('immutable', $e->getMessage());
-        }
-        $this->as($this->analyst)->get('/performance/my-ratings')->assertOk()->assertSee('Exceeds Expectation')->assertSee('Ajukan keberatan');
+        $this->assertSame(['89.99', 'exceeds', 'Exceeds Expectation', 'provisional', now()->addDays(14)->toDateString()],
+            [$rating->final_score, $rating->band, $rating->band_label, $rating->status, $rating->appeal_deadline]);
+        $this->assertSame(0, DB::table('performance_snapshots')->count());
+        $this->as($this->analyst)->get('/performance/my-ratings')->assertOk()->assertSee('Exceeds Expectation')->assertSee('sementara')->assertSee('Ajukan keberatan');
 
-        // ---- Keberatan: diputus atasan dari atasan, bukan penilai
+        // ---- Keberatan sebelum pengesahan: diputus atasan dari atasan, bukan penilai
         $this->post('/performance/ratings/'.$rating->id.'/appeal', ['reason' => 'tidak adil'])->assertSessionHasErrors('reason');
         $this->post('/performance/ratings/'.$rating->id.'/appeal', ['reason' => 'Kalibrasi menurunkan band padahal seluruh KPI terlampaui dan ada bukti penghargaan klien.'])
             ->assertSessionHasNoErrors();
@@ -199,17 +190,119 @@ class PerformanceCycleTest extends TestCase
         $this->post('/performance/ratings/'.$rating->id.'/appeal', ['reason' => str_repeat('Ajukan lagi untuk periode yang sama. ', 2)])->assertSessionHasErrors('reason');
         $this->as($this->manager)->post('/performance/appeals/'.$appeal->id.'/decide', ['decision' => 'adjusted', 'new_score' => 95, 'decision_note' => 'Saya setuju dengan pegawai'])
             ->assertForbidden();
+
+        // Pengesahan final ditolak selama jendela keberatan terbuka / masih ada keberatan
+        $this->asHr()->post('/performance/periods/'.$this->period.'/finalize')->assertSessionHasErrors('period');
+        $this->travel(15)->days();
+        $this->post('/performance/periods/'.$this->period.'/finalize')->assertSessionHasErrors('period');
+
         $this->as($this->director)->get('/performance/appeals')->assertOk()->assertSee('Simpan keputusan');
         $this->post('/performance/appeals/'.$appeal->id.'/decide', ['decision' => 'adjusted', 'new_score' => 91, 'decision_note' => 'Bukti penghargaan klien valid'])
             ->assertSessionHasNoErrors();
         $ratings = DB::table('performance_ratings')->where('employee_id', $this->employees['ANL'])->orderBy('revision')->get();
         $this->assertSame([[1, 0, 'exceeds'], [2, 1, 'outstanding']], $ratings->map(fn ($r) => [(int) $r->revision, (int) $r->is_current, $r->band])->all());
-        $this->assertSame(2, DB::table('performance_snapshots')->count());
         $this->assertStringContainsString('Keberatan #'.$appeal->id, $ratings[1]->reason);
+        $this->asHr()->get('/performance/dashboard')->assertOk()->assertSee('Rating sementara');
+
+        // ---- Pengesahan final: rating terkini final + snapshot immutable, periode ditutup
+        $this->post('/performance/periods/'.$this->period.'/finalize')->assertSessionHasNoErrors();
+        $this->assertSame('closed', DB::table('performance_periods')->where('id', $this->period)->value('status'));
+        $final = DB::table('performance_ratings')->where('employee_id', $this->employees['ANL'])->where('is_current', true)->first();
+        $this->assertSame(['final', 2], [$final->status, (int) $final->revision]);
+        $this->assertSame(1, DB::table('performance_snapshots')->count());
+        $snapshot = DB::table('performance_snapshots')->where('rating_id', $final->id)->first();
+        $this->assertSame(hash('sha256', $snapshot->payload), $snapshot->checksum);
+        $payload = json_decode($snapshot->payload, true);
+        $this->assertSame(1, $payload['policy']['_version']);
+        $this->assertCount(1, $payload['calibrations']);
+        $this->assertSame('adjusted', $payload['appeals'][0]['status']);
+        try {
+            DB::table('performance_snapshots')->where('id', $snapshot->id)->update(['checksum' => 'x']);
+            $this->fail('Snapshot seharusnya tidak dapat diubah');
+        } catch (QueryException $e) {
+            $this->assertStringContainsString('immutable', $e->getMessage());
+        }
+        $this->as($this->analyst)->post('/performance/ratings/'.$final->id.'/appeal', ['reason' => str_repeat('Keberatan setelah final tidak boleh. ', 2)])
+            ->assertSessionHasErrors('reason');
 
         // ---- Dasbor
         $this->asHr()->get('/performance/dashboard')->assertOk()->assertSee('Rating yang disahkan')->assertSee('data-chart', false);
-        $this->get('/performance/periods/'.$this->period.'/ratings')->assertOk()->assertSee('Outstanding');
+        $this->get('/performance/periods/'.$this->period.'/ratings')->assertOk()->assertSee('Outstanding')->assertSee('final');
+
+        // ---- Ekspor rating: alasan wajib, watermark, tercatat; pegawai tanpa izin ekspor ditolak
+        $export = '/performance/periods/'.$this->period.'/ratings/export';
+        $this->get($export)->assertOk()->assertSee('Alasan ekspor data');
+        $csv = $this->get($export.'?export_reason='.urlencode('Rekap rating untuk komite remunerasi'))->assertOk()->streamedContent();
+        $this->assertStringContainsString('RAHASIA', $csv);
+        $this->assertStringContainsString('Rina Analis', $csv);
+        $this->assertStringContainsString('Final', $csv);
+        $this->assertSame(1, DB::table('data_export_logs')->where('module', 'performance_ratings')->where('row_count', 1)->count());
+        $this->as($this->analyst)->get($export.'?export_reason='.urlencode('Ingin melihat rating semua orang'))->assertForbidden();
+    }
+
+    public function test_mutasi_tengah_periode_dihitung_prorata_dan_masa_kurang_not_rated(): void
+    {
+        $period = (object) DB::table('performance_periods')->find($this->period);
+        $mgr = (int) DB::table('positions')->where('code', 'MGR')->value('id');
+        $pos2 = $this->insert('positions', ['code' => 'ANL2', 'title' => 'Analis Kredit 2', 'company_id' => $this->company,
+            'unit_id' => DB::table('positions')->where('id', $mgr)->value('unit_id'), 'job_id' => DB::table('positions')->where('id', $mgr)->value('job_id'),
+            'status' => 'active', 'headcount' => 1, 'effective_from' => '2020-01-01']);
+        DB::table('position_relationships')->insert(['tenant_id' => $this->tenant, 'position_id' => $pos2, 'reports_to_id' => $mgr, 'type' => 'solid', 'effective_from' => '2020-01-01']);
+        $anl = (int) DB::table('positions')->where('code', 'ANL')->value('id');
+
+        // Dodi: ANL2 s.d. 30 Juni (181 hari) lalu mutasi ke ANL (184 hari). Eko: masuk 1 November (61 hari < 90).
+        $people = [];
+        foreach (['Dodi Mutasi' => [[$pos2, '2021-01-04', '2026-06-30'], [$anl, '2026-07-01', null]], 'Eko Baru' => [[$pos2, '2026-11-01', null]]] as $name => $assignments) {
+            $user = $this->makeUser($this->tenant, Roles::id(Roles::EMPLOYEE));
+            $emp = $this->insert('employees', ['company_id' => $this->company, 'user_id' => $user->id, 'employee_number' => 'E'.Str::upper(Str::random(5)),
+                'full_name' => $name, 'employment_status' => 'pkwtt', 'join_date' => $assignments[0][1], 'status' => 'active']);
+            foreach ($assignments as [$position, $from, $to]) {
+                $this->insert('employee_assignments', ['employee_id' => $emp, 'position_id' => $position, 'type' => 'primary', 'effective_from' => $from, 'effective_to' => $to]);
+            }
+            $people[$name] = $emp;
+        }
+
+        // Rencana per penugasan, dipotong ke batas periode
+        $segments = $this->asTenantPlans($people['Dodi Mutasi'], $period);
+        $this->assertSame([['2026-01-01', '2026-06-30', 181], ['2026-07-01', '2026-12-31', 184]], $segments);
+
+        // Rencana disetujui + mid-year selesai (langsung di data), lalu penilaian dibuka & diselesaikan
+        $scores = ['Dodi Mutasi' => [80.0, 90.0], 'Eko Baru' => [95.0]];
+        foreach ($people as $name => $emp) {
+            foreach (DB::table('employee_assignments')->where('employee_id', $emp)->orderBy('effective_from')->get() as $a) {
+                $plan = $this->insert('performance_plans', ['period_id' => $this->period, 'employee_id' => $emp, 'assignment_id' => $a->id, 'position_id' => $a->position_id,
+                    'start_date' => max($a->effective_from, '2026-01-01'), 'end_date' => min($a->effective_to ?? '2026-12-31', '2026-12-31'), 'status' => 'approved']);
+                DB::table('performance_checkins')->insert(['tenant_id' => $this->tenant, 'plan_id' => $plan, 'type' => 'midyear', 'checkin_date' => '2026-07-01',
+                    'status' => 'completed', 'created_by' => $this->hr->id, 'created_at' => now()]);
+            }
+        }
+        $this->asHr()->post('/performance/periods/'.$this->period.'/advance')->assertSessionHasNoErrors();
+        $this->assertSame(4, DB::table('performance_assessments')->count());
+
+        DB::table('performance_assessments')->where('plan_id', $this->planId)->update(['status' => 'completed', 'final_score' => 75, 'final_raw' => 75, 'band' => 'meets']);
+        foreach ($people as $name => $emp) {
+            $plans = DB::table('performance_plans')->where('employee_id', $emp)->orderBy('start_date')->pluck('id');
+            foreach ($plans as $i => $plan) {
+                $s = $scores[$name][$i];
+                DB::table('performance_assessments')->where('plan_id', $plan)->update(['status' => 'completed', 'final_score' => $s, 'final_raw' => $s, 'band' => $s >= 90 ? 'outstanding' : 'exceeds']);
+            }
+        }
+        $this->post('/performance/periods/'.$this->period.'/advance')->assertSessionHasNoErrors();
+        $this->post('/performance/periods/'.$this->period.'/publish')->assertSessionHasNoErrors();
+
+        // Dodi: (80×181 + 90×184) / 365 = 85,04 → Exceeds (band dari skor prorata, bukan dari salah satu penugasan)
+        $dodi = DB::table('performance_ratings')->where('employee_id', $people['Dodi Mutasi'])->first();
+        $this->assertSame(['85.04', 'exceeds', 1], [$dodi->final_score, $dodi->band, (int) $dodi->rated]);
+        // Eko: 61 hari < 90 → not rated
+        $eko = DB::table('performance_ratings')->where('employee_id', $people['Eko Baru'])->first();
+        $this->assertSame([0, null, 'Not rated'], [(int) $eko->rated, $eko->final_score, $eko->band_label]);
+    }
+
+    /** @return array<int, array{0:string,1:string,2:int}> */
+    private function asTenantPlans(int $employeeId, object $period): array
+    {
+        return $this->asTenant($this->tenant, fn () => app(PerformancePlans::class)->segments($employeeId, $period)
+            ->map(fn ($s) => [$s->start, $s->end, (int) $s->days])->values()->all());
     }
 
     public function test_pip_untuk_rating_rendah_dan_isolasi(): void

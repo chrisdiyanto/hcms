@@ -23,12 +23,15 @@ final class PerformanceRatings
 
     public function __construct(private PerformancePeriods $periods, private PerformanceMonitoring $monitoring, private Notifier $notifier) {}
 
-    /** Sahkan & umumkan rating seluruh pegawai periode; periode ditutup. */
-    public function publish(int $periodId, int $userId): int
+    /**
+     * Umumkan rating sementara seluruh pegawai periode; periode masuk tahap keberatan.
+     * Rating baru final (dan di-snapshot) lewat finalize() setelah jendela keberatan berakhir.
+     */
+    public function announce(int $periodId, int $userId): int
     {
         $period = $this->periods->find($periodId);
         if ($period->status !== 'calibration') {
-            throw ValidationException::withMessages(['period' => 'Rating hanya dapat disahkan pada tahap kalibrasi.']);
+            throw ValidationException::withMessages(['period' => 'Rating hanya dapat diumumkan pada tahap kalibrasi.']);
         }
         if (TenantScope::table('calibration_sessions')->where('period_id', $period->id)->where('status', 'open')->exists()) {
             throw ValidationException::withMessages(['period' => 'Masih ada sesi kalibrasi yang terbuka.']);
@@ -43,7 +46,9 @@ final class PerformanceRatings
             ->get(['performance_assessments.*', 'performance_plans.employee_id', 'performance_plans.start_date', 'performance_plans.end_date', 'employees.user_id'])
             ->groupBy('employee_id');
 
-        return DB::transaction(function () use ($period, $calc, $rows, $userId) {
+        $closesOn = now()->addDays((int) $period->policy['appeal_days'])->toDateString();
+
+        return DB::transaction(function () use ($period, $calc, $rows, $userId, $closesOn) {
             $count = 0;
             foreach ($rows as $employeeId => $assessments) {
                 $segments = $assessments->map(fn ($a) => [
@@ -56,18 +61,58 @@ final class PerformanceRatings
                     : ($assessments->count() === 1 ? PerformanceEvaluation::effective($assessments->first())['band'] : $calc->band($result['score']));
                 $raw = $result['rated'] ? round($assessments->sum(fn ($a) => (float) $a->final_raw * $this->share($a, $segments, $assessments)), 2) : null;
 
-                $rating = $this->createRating($period, (int) $employeeId, 1, $result['rated'], $raw, $result['score'], $band, null, $userId);
+                $this->createRating($period, (int) $employeeId, 1, $result['rated'], $raw, $result['score'], $band, null, $userId, $closesOn);
                 $count++;
                 if ($assessments->first()->user_id) {
                     $this->notifier->send((int) $assessments->first()->user_id, 'Rating kinerja diumumkan',
-                        'Rating '.$period->name.' telah disahkan. Keberatan dapat diajukan s.d. '.$rating->appeal_deadline.'.',
+                        'Rating sementara '.$period->name.' telah diumumkan. Keberatan dapat diajukan s.d. '.$closesOn.'.',
                         'performance/my-ratings', 'fa fa-award');
                 }
             }
-            DB::table('performance_periods')->where('id', $period->id)->update(['status' => 'closed', 'updated_at' => now()]);
-            AuditLog::updated('performance_periods', $period->id, ['status' => 'calibration'], ['status' => 'closed', 'rating' => $count], 'Rating kinerja disahkan & diumumkan');
+            DB::table('performance_periods')->where('id', $period->id)->update(['status' => 'appeal', 'appeal_closes_on' => $closesOn, 'updated_at' => now()]);
+            AuditLog::updated('performance_periods', $period->id, ['status' => 'calibration'], ['status' => 'appeal', 'rating' => $count],
+                'Rating kinerja sementara diumumkan; keberatan s.d. '.$closesOn);
 
             return $count;
+        });
+    }
+
+    /**
+     * Pengesahan final: jendela keberatan berakhir dan semua keberatan sudah diputus.
+     * Rating terkini menjadi final dan di-snapshot (immutable); periode ditutup.
+     */
+    public function finalize(int $periodId, int $userId): int
+    {
+        $period = $this->periods->find($periodId);
+        if ($period->status !== 'appeal') {
+            throw ValidationException::withMessages(['period' => 'Pengesahan final dilakukan setelah rating diumumkan.']);
+        }
+        if (now()->toDateString() <= $period->appeal_closes_on) {
+            throw ValidationException::withMessages(['period' => 'Jendela keberatan masih terbuka s.d. '.$period->appeal_closes_on.'.']);
+        }
+        $ratingIds = TenantScope::table('performance_ratings')->where('period_id', $period->id)->pluck('id');
+        $pending = TenantScope::table('performance_appeals')->whereIn('rating_id', $ratingIds)->where('status', 'submitted')->count();
+        if ($pending) {
+            throw ValidationException::withMessages(['period' => 'Masih ada '.$pending.' keberatan yang belum diputus.']);
+        }
+
+        return DB::transaction(function () use ($period, $userId) {
+            $ratings = TenantScope::table('performance_ratings')->where('period_id', $period->id)->where('is_current', true)->get();
+            foreach ($ratings as $rating) {
+                DB::table('performance_ratings')->where('id', $rating->id)->update([
+                    'status' => 'final', 'finalized_at' => now(), 'finalized_by' => $userId, 'updated_at' => now(),
+                ]);
+                $this->snapshot(TenantScope::table('performance_ratings')->where('id', $rating->id)->first(), $period);
+                $owner = (int) TenantScope::table('employees')->where('id', $rating->employee_id)->value('user_id');
+                if ($owner) {
+                    $this->notifier->send($owner, 'Rating kinerja disahkan', 'Rating '.$period->name.' telah disahkan final.', 'performance/my-ratings', 'fa fa-award');
+                }
+            }
+            DB::table('performance_periods')->where('id', $period->id)->update(['status' => 'closed', 'updated_at' => now()]);
+            AuditLog::updated('performance_periods', $period->id, ['status' => 'appeal'], ['status' => 'closed', 'rating' => $ratings->count()],
+                'Rating kinerja disahkan final & di-snapshot');
+
+            return $ratings->count();
         });
     }
 
@@ -79,18 +124,19 @@ final class PerformanceRatings
         return $days / $total;
     }
 
-    private function createRating(object $period, int $employeeId, int $revision, bool $rated, ?float $raw, ?float $score, ?string $band, ?string $reason, int $userId): object
+    /** Rating sementara (provisional); snapshot dibuat saat pengesahan final. */
+    private function createRating(object $period, int $employeeId, int $revision, bool $rated, ?float $raw, ?float $score, ?string $band, ?string $reason, int $userId, string $appealDeadline): object
     {
         $id = DB::table('performance_ratings')->insertGetId(TenantScope::fillForInsert('performance_ratings', [
             'uuid' => (string) Str::uuid7(), 'period_id' => $period->id, 'employee_id' => $employeeId, 'revision' => $revision, 'is_current' => true,
-            'rated' => $rated, 'raw_score' => $raw, 'final_score' => $score, 'band' => $band,
+            'status' => 'provisional', 'rated' => $rated, 'raw_score' => $raw, 'final_score' => $score, 'band' => $band,
             'band_label' => $band ? (PerformancePolicy::bandLabels($period->policy)[$band] ?? $band) : 'Not rated',
-            'reason' => $reason, 'published_at' => now(), 'appeal_deadline' => now()->addDays((int) $period->policy['appeal_days'])->toDateString(),
+            'reason' => $reason, 'published_at' => now(), 'appeal_deadline' => $appealDeadline,
             'published_by' => $userId, 'created_at' => now(), 'updated_at' => now(),
         ]));
         $rating = TenantScope::table('performance_ratings')->where('id', $id)->first();
-        $this->snapshot($rating, $period);
-        AuditLog::created('performance_ratings', $id, ['pegawai' => $employeeId, 'revisi' => $revision, 'skor' => $score, 'band' => $band], 'Rating kinerja disahkan');
+        AuditLog::created('performance_ratings', $id, ['pegawai' => $employeeId, 'revisi' => $revision, 'skor' => $score, 'band' => $band],
+            $revision > 1 ? 'Rating kinerja direvisi' : 'Rating kinerja sementara diumumkan');
 
         return $rating;
     }
@@ -133,8 +179,9 @@ final class PerformanceRatings
         $rating = TenantScope::table('performance_ratings')->where('id', $ratingId)->first() ?? abort(404);
         $employee = TenantScope::table('employees')->where('id', $rating->employee_id)->first();
         abort_unless((int) $employee->user_id === $userId, 404);
-        if (! $rating->is_current || ! $rating->rated) {
-            throw ValidationException::withMessages(['reason' => 'Keberatan hanya untuk rating terkini yang sudah dinilai.']);
+        if (! $rating->is_current || ! $rating->rated || $rating->status !== 'provisional'
+            || TenantScope::table('performance_periods')->where('id', $rating->period_id)->value('status') !== 'appeal') {
+            throw ValidationException::withMessages(['reason' => 'Keberatan hanya untuk rating sementara yang masih dalam tahap keberatan.']);
         }
         if (now()->toDateString() > $rating->appeal_deadline) {
             throw ValidationException::withMessages(['reason' => 'Jendela keberatan sudah berakhir pada '.$rating->appeal_deadline.'.']);
@@ -189,7 +236,9 @@ final class PerformanceRatings
     public function decide(int $appealId, int $userId, bool $isHr, bool $adjust, string $note, ?float $newScore): void
     {
         $appeal = TenantScope::table('performance_appeals')->where('id', $appealId)->first() ?? abort(404);
-        if ($appeal->status !== 'submitted') {
+        $periodStatus = TenantScope::table('performance_ratings')->join('performance_periods', 'performance_periods.id', '=', 'performance_ratings.period_id')
+            ->where('performance_ratings.id', $appeal->rating_id)->value('performance_periods.status');
+        if ($appeal->status !== 'submitted' || $periodStatus !== 'appeal') {
             throw ValidationException::withMessages(['decision' => 'Keberatan sudah diputus.']);
         }
         if (! $this->canDecide($appeal, $userId, $isHr)) {
@@ -217,7 +266,7 @@ final class PerformanceRatings
             if ($adjust) {
                 DB::table('performance_ratings')->where('id', $rating->id)->update(['is_current' => false, 'updated_at' => now()]);
                 $this->createRating($period, (int) $rating->employee_id, $rating->revision + 1, true, $rating->raw_score, round($newScore, 2), $newBand,
-                    'Keberatan #'.$appeal->id.' dikabulkan: '.mb_substr(trim($note), 0, 400), $userId);
+                    'Keberatan #'.$appeal->id.' dikabulkan: '.mb_substr(trim($note), 0, 400), $userId, $rating->appeal_deadline);
             }
             $owner = (int) TenantScope::table('employees')->where('id', $rating->employee_id)->value('user_id');
             if ($owner) {

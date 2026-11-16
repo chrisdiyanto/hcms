@@ -86,7 +86,9 @@ Route::get('performance/calibration/sessions/{session}', 'Performance\Calibratio
 Route::post('performance/calibration/sessions/{session}/move', 'Performance\CalibrationController@move')->whereNumber('session');
 Route::post('performance/calibration/sessions/{session}/close', 'Performance\CalibrationController@close')->whereNumber('session');
 Route::post('performance/periods/{period}/publish', 'Performance\RatingsController@publish')->whereNumber('period');
+Route::post('performance/periods/{period}/finalize', 'Performance\RatingsController@finalize')->whereNumber('period');
 Route::get('performance/periods/{period}/ratings', 'Performance\RatingsController@periodRatings')->whereNumber('period');
+Route::match(['get', 'post'], 'performance/periods/{period}/ratings/export', 'Performance\RatingsController@export')->whereNumber('period')->middleware('throttle:10,1,exports');
 Route::get('performance/my-ratings', 'Performance\RatingsController@mine');
 Route::post('performance/ratings/{rating}/appeal', 'Performance\RatingsController@appeal')->whereNumber('rating')->middleware('throttle:5,1,appeals');
 Route::get('performance/appeals', 'Performance\RatingsController@appeals');
@@ -101,6 +103,7 @@ Route::get('competency/reports/employees/{employee}', 'Competency\ReportsControl
 
 // Employee Self Service
 Route::get('ess/profile', 'Employee\EssController@profile');
+Route::get('ess/my-data', 'Employee\EssController@download')->middleware('throttle:5,1,my-data');
 Route::post('ess/change-requests', 'Employee\EssController@submit')->middleware('throttle:10,1,ess');
 
 // Workflow & approval

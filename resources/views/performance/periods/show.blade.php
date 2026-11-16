@@ -19,8 +19,15 @@
 		@elseif($period->status === 'calibration')
 			<a href="{{ url('performance/periods/'.$period->id.'/calibration') }}" class="btn btn-sm btn-outline-primary">Sesi kalibrasi</a>
 			@if($canApprove)
-				<form method="POST" action="{{ url('performance/periods/'.$period->id.'/publish') }}" onsubmit="return confirm('Sahkan dan umumkan rating? Periode akan ditutup dan snapshot permanen dibuat.')">
-					@csrf<button class="btn btn-sm btn-success" type="submit">Sahkan &amp; umumkan rating</button></form>
+				<form method="POST" action="{{ url('performance/periods/'.$period->id.'/publish') }}" onsubmit="return confirm('Umumkan rating sementara? Jendela keberatan {{ $period->policy['appeal_days'] ?? 14 }} hari dimulai.')">
+					@csrf<button class="btn btn-sm btn-success" type="submit">Umumkan rating sementara</button></form>
+			@endif
+		@elseif($period->status === 'appeal')
+			<a href="{{ url('performance/periods/'.$period->id.'/ratings') }}" class="btn btn-sm btn-outline-primary">Rating & keberatan</a>
+			@if($canApprove)
+				<form method="POST" action="{{ url('performance/periods/'.$period->id.'/finalize') }}" onsubmit="return confirm('Sahkan final? Snapshot permanen dibuat dan periode ditutup.')">
+					@csrf<button class="btn btn-sm btn-success" type="submit" @disabled(now()->toDateString() <= $period->appeal_closes_on)
+						title="Jendela keberatan s.d. {{ $period->appeal_closes_on }}">Sahkan final</button></form>
 			@endif
 		@elseif($period->status === 'closed')
 			<a href="{{ url('performance/periods/'.$period->id.'/ratings') }}" class="btn btn-sm btn-outline-primary">Rating kinerja</a>
@@ -123,7 +130,7 @@
 						<td><span class="badge {{ ['approved' => 'bg-success', 'submitted' => 'bg-info', 'returned' => 'bg-warning text-dark', 'draft' => 'bg-light text-dark'][$p->status] ?? 'bg-secondary' }}">{{ $planStatuses[$p->status] ?? 'Belum dibuat' }}</span></td>
 						<td class="small">{{ $p->submitted_at ?: '—' }}
 							@if($p->status === 'approved' && !in_array($period->status, ['draft', 'planning']))<a href="{{ url('performance/plans/'.$p->plan_id.'/monitoring') }}" class="ms-1">monitoring</a>@endif
-							@if($p->status === 'approved' && in_array($period->status, ['assessment', 'calibration', 'closed']))<a href="{{ url('performance/assessments/'.$p->plan_id) }}" class="ms-1">penilaian</a>@endif</td></tr>
+							@if($p->status === 'approved' && in_array($period->status, ['assessment', 'calibration', 'appeal', 'closed']))<a href="{{ url('performance/assessments/'.$p->plan_id) }}" class="ms-1">penilaian</a>@endif</td></tr>
 				@empty
 					<tr><td colspan="4" class="text-muted">Tidak ada pegawai dalam cakupan data Anda.</td></tr>
 				@endforelse

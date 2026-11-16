@@ -7,6 +7,7 @@ use App\Domain\Performance\Services\PerformancePeriods;
 use App\Domain\Performance\Services\PerformanceRatings;
 use App\Http\Controllers\Controller;
 use App\Models\Sximo;
+use App\Support\Audit\DataExport;
 use App\Support\Tenancy\TenantScope;
 use Illuminate\Http\Request;
 
@@ -24,9 +25,17 @@ class RatingsController extends Controller
     public function publish(Request $request, int $period)
     {
         abort_unless(! empty($this->periodAccess()['is_approve']), 403);
-        $count = $this->ratings->publish($period, (int) auth()->id());
+        $count = $this->ratings->announce($period, (int) auth()->id());
 
-        return redirect('performance/periods/'.$period.'/ratings')->with('message', $count.' rating disahkan dan diumumkan; periode ditutup.')->with('status', 'success');
+        return redirect('performance/periods/'.$period.'/ratings')->with('message', $count.' rating sementara diumumkan; jendela keberatan dibuka.')->with('status', 'success');
+    }
+
+    public function finalize(Request $request, int $period)
+    {
+        abort_unless(! empty($this->periodAccess()['is_approve']), 403);
+        $count = $this->ratings->finalize($period, (int) auth()->id());
+
+        return redirect('performance/periods/'.$period.'/ratings')->with('message', $count.' rating disahkan final; snapshot dibuat dan periode ditutup.')->with('status', 'success');
     }
 
     /** Rekap rating periode (HR, sesuai data scope). */
@@ -45,6 +54,49 @@ class RatingsController extends Controller
             'period' => $row, 'ratings' => $ratings,
             'snapshots' => TenantScope::table('performance_snapshots')->whereIn('rating_id', $ratings->pluck('id'))->pluck('checksum', 'rating_id'),
         ]);
+    }
+
+    /** Ekspor rating periode (CSV): butuh izin ekspor modul Periode, alasan wajib, watermark, tercatat; > 500 baris butuh Approve. */
+    public function export(Request $request, int $period)
+    {
+        $access = $this->periodAccess();
+        abort_unless(! empty($access['is_csv']) || ! empty($access['is_excel']), 403);
+        $row = $this->periods->find($period);
+
+        $reason = (string) $request->input('export_reason');
+        if (! DataExport::validReason($reason)) {
+            return view('sximo.module.utility.export-reason', [
+                'action' => $request->url(), 'query' => $request->except('export_reason'),
+                'threshold' => DataExport::MASS_THRESHOLD, 'min' => DataExport::MIN_REASON,
+                'error' => $request->has('export_reason') ? 'Alasan minimal '.DataExport::MIN_REASON.' karakter.' : null,
+                'pageTitle' => 'Ekspor Rating Kinerja', 'pageNote' => $row->name,
+            ]);
+        }
+
+        $ratings = TenantScope::table('performance_ratings')->join('employees', 'employees.id', '=', 'performance_ratings.employee_id')
+            ->where('performance_ratings.period_id', $row->id)->where('performance_ratings.is_current', true)
+            ->whereIn('performance_ratings.employee_id', EmployeeScope::query()->select('employees.id'))
+            ->orderBy('employees.full_name')
+            ->get(['performance_ratings.*', 'employees.full_name', 'employees.employee_number']);
+        if (! DataExport::allowed($ratings->count(), $access)) {
+            return redirect('performance/periods/'.$row->id.'/ratings')
+                ->with('message', 'Ekspor lebih dari '.DataExport::MASS_THRESHOLD.' baris membutuhkan izin Approve.')->with('status', 'error');
+        }
+
+        $logId = DataExport::log('performance_ratings', 'csv', $ratings->count(), $reason, ['period' => $row->code]);
+        $watermark = DataExport::watermark($logId);
+
+        return response()->streamDownload(function () use ($ratings, $watermark, $row) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, [$watermark]);
+            fputcsv($out, ['Periode', 'NIP', 'Nama', 'Skor', 'Skor mentah', 'Rating', 'Status', 'Revisi', 'Diumumkan', 'Disahkan final']);
+            foreach ($ratings as $r) {
+                fputcsv($out, [$row->code, $r->employee_number, $r->full_name, $r->rated ? $r->final_score : '', $r->raw_score, $r->band_label,
+                    $r->status === 'final' ? 'Final' : 'Sementara', $r->revision, $r->published_at, $r->finalized_at]);
+            }
+            fclose($out);
+        }, 'rating-'.$row->code.'-'.now()->format('Ymd-His').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function mine()

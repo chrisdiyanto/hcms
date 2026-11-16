@@ -17,7 +17,7 @@ final class PerformancePeriods
 {
     public const STATUS = [
         'draft' => 'Draft', 'planning' => 'Perencanaan', 'monitoring' => 'Monitoring',
-        'assessment' => 'Penilaian', 'calibration' => 'Kalibrasi', 'closed' => 'Ditutup',
+        'assessment' => 'Penilaian', 'calibration' => 'Kalibrasi', 'appeal' => 'Keberatan', 'closed' => 'Ditutup',
     ];
 
     public function __construct(private PerformancePolicy $policies) {}

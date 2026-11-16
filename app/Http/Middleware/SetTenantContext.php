@@ -27,6 +27,15 @@ class SetTenantContext
 {
     public function __construct(private TenantContext $context, private BreakGlass $breakGlass) {}
 
+    /**
+     * Bersihkan konteks tenant setelah respons dikirim. Octane sudah membuang instance scoped
+     * di awal tiap request; ini lapisan tambahan agar konteks tidak pernah tersisa di worker.
+     */
+    public function terminate(Request $request, $response): void
+    {
+        app(TenantContext::class)->clear();
+    }
+
     public function handle(Request $request, Closure $next)
     {
         $user = Auth::user();

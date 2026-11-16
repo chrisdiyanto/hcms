@@ -1,7 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="page-titles"><h4 class="mb-0"> {{ $pageTitle }} <small>{{ $pageNote }}</small></h4></div>
+<div class="page-titles d-flex justify-content-between align-items-center flex-wrap gap-2">
+	<h4 class="mb-0"> {{ $pageTitle }} <small>{{ $pageNote }}</small></h4>
+	@if($employee)
+		<a href="{{ url('ess/my-data') }}" class="btn btn-sm btn-outline-secondary" title="Salinan seluruh data pribadi Anda (hak akses subjek data, UU PDP)"><i class="fa fa-download"></i> Unduh data saya</a>
+	@endif
+</div>
 
 @include('core.tenants.partials.flash')
 

@@ -5,6 +5,7 @@ namespace Tests\Feature\Tenancy;
 use App\Support\Tenancy\TenantContext;
 use App\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Tests\Concerns\InteractsWithTenants;
 use Tests\TestCase;
 
@@ -33,13 +34,15 @@ class TenantHttpTest extends TestCase
     {
         $user = $this->makeUser($this->tenantA);
 
+        // Konteks diperiksa di dalam request (setelah respons, middleware membersihkannya)
+        Route::middleware('web')->get('/__tenant-context', fn (TenantContext $c) => ['tenant' => $c->tenantId(), 'company' => $c->companyId()]);
+
         // cid milik tenant lain diabaikan
         $this->actingAsSximo($user)->withSession(['cid' => $this->companyB])->get('/up')->assertOk();
         $this->get('/corporate')->assertOk();
+        $this->getJson('/__tenant-context')->assertOk()->assertExactJson(['tenant' => $this->tenantA, 'company' => null]);
 
-        $context = app(TenantContext::class);
-        $this->assertSame($this->tenantA, $context->tenantId());
-        $this->assertNull($context->companyId());
+        $this->assertNull(app(TenantContext::class)->tenantId(), 'konteks dibersihkan setelah request');
     }
 
     public function test_grid_company_hanya_menampilkan_tenant_sendiri(): void
