@@ -26,6 +26,7 @@ final class HcmsModules
         'kepegawaian' => ['name' => 'Kepegawaian', 'id' => 'Kepegawaian', 'icon' => 'fa fa-users', 'position' => 'sidebar'],
         'organisasi' => ['name' => 'Organisasi', 'id' => 'Organisasi', 'icon' => 'fa fa-sitemap', 'position' => 'sidebar'],
         'kompetensi' => ['name' => 'Kompetensi', 'id' => 'Kompetensi', 'icon' => 'fa fa-medal', 'position' => 'sidebar'],
+        'kinerja' => ['name' => 'Kinerja', 'id' => 'Kinerja', 'icon' => 'fa fa-bullseye', 'position' => 'sidebar'],
     ];
 
     public static function definitions(): array
@@ -83,6 +84,13 @@ final class HcmsModules
                 'access' => $hrManage + [Roles::ASSESSOR => self::FULL]],
             'competencyreports' => ['title' => 'Laporan Kompetensi', 'table' => 'job_fit_results', 'url' => 'competency/reports', 'parent' => 'kompetensi', 'icon' => 'fa fa-chart-bar', 'title_id' => 'Laporan Kompetensi',
                 'access' => $hrManage + $orgRead + [Roles::LINE_MANAGER => self::READ, Roles::ASSESSOR => self::READ]],
+            // Performance Management
+            'perfpolicies' => ['title' => 'Kebijakan Kinerja', 'table' => 'performance_policies', 'url' => 'performance/policies', 'parent' => 'kinerja', 'icon' => 'fa fa-balance-scale', 'title_id' => 'Kebijakan Kinerja',
+                'access' => $hrManage + [Roles::AUDITOR => self::READ, Roles::HRBP => self::READ]],
+            'perfperiods' => ['title' => 'Periode Kinerja', 'table' => 'performance_periods', 'url' => 'performance/periods', 'parent' => 'kinerja', 'icon' => 'fa fa-calendar-check', 'title_id' => 'Periode & Sasaran',
+                'access' => $hrManage + $orgRead + [Roles::LINE_MANAGER => self::READ]],
+            'myplans' => ['title' => 'Rencana Kinerja Saya', 'table' => 'performance_plans', 'url' => 'performance/my-plans', 'parent' => 'layanan', 'icon' => 'fa fa-bullseye', 'title_id' => 'Rencana Kinerja Saya',
+                'access' => self::everyone(), 'register_module' => false],
             'myassessments' => ['title' => 'Asesmen Saya', 'table' => 'assessment_raters', 'url' => 'competency/my-assessments', 'parent' => 'layanan', 'icon' => 'fa fa-star', 'title_id' => 'Asesmen Saya',
                 'access' => self::everyone(), 'register_module' => false],
 

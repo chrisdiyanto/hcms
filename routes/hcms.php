@@ -50,7 +50,25 @@ Route::post('competency/assessments/{assessment}/cancel', 'Competency\Assessment
 Route::get('competency/my-assessments', 'Competency\MyAssessmentsController@index');
 Route::get('competency/my-assessments/{rater}', 'Competency\MyAssessmentsController@edit')->whereNumber('rater');
 Route::put('competency/my-assessments/{rater}', 'Competency\MyAssessmentsController@update')->whereNumber('rater')->middleware('throttle:20,1,assessments');
-Route::get('competency/reports', 'Competency\ReportsController@index');
+// Performance Management
+Route::get('performance/policies', 'Performance\PoliciesController@index');
+Route::post('performance/policies/draft', 'Performance\PoliciesController@createDraft');
+Route::put('performance/policies/{policy}', 'Performance\PoliciesController@update')->whereNumber('policy');
+Route::post('performance/policies/{policy}/publish', 'Performance\PoliciesController@publish')->whereNumber('policy');
+Route::get('performance/periods', 'Performance\PeriodsController@index');
+Route::post('performance/periods', 'Performance\PeriodsController@store');
+Route::get('performance/periods/{period}', 'Performance\PeriodsController@show')->whereNumber('period');
+Route::post('performance/periods/{period}/open', 'Performance\PeriodsController@open')->whereNumber('period');
+Route::post('performance/periods/{period}/advance', 'Performance\PeriodsController@advance')->whereNumber('period');
+Route::post('performance/periods/{period}/objectives', 'Performance\PeriodsController@storeObjective')->whereNumber('period');
+Route::put('performance/objectives/{objective}', 'Performance\PeriodsController@updateObjective')->whereNumber('objective');
+Route::delete('performance/objectives/{objective}', 'Performance\PeriodsController@destroyObjective')->whereNumber('objective');
+Route::get('performance/my-plans', 'Performance\MyPlansController@index');
+Route::get('performance/my-plans/{plan}', 'Performance\MyPlansController@edit')->whereNumber('plan');
+Route::put('performance/my-plans/{plan}', 'Performance\MyPlansController@update')->whereNumber('plan')->middleware('throttle:30,1,plans');
+Route::post('performance/my-plans/{plan}/cancel', 'Performance\MyPlansController@cancel')->whereNumber('plan');
+
+Route::get('competency/reports','Competency\ReportsController@index');
 Route::get('competency/reports/employees/{employee}', 'Competency\ReportsController@employee')->whereNumber('employee');
 
 // Employee Self Service

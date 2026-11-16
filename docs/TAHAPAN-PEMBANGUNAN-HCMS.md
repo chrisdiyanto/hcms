@@ -94,7 +94,7 @@ Durasi mengikuti blueprint (MVP P0 = 40 minggu, tim ±12 orang). Bila tim lebih 
 ### Fase 0 — Blueprint & persiapan master (minggu 1–6)
 
 **Bisnis/analisis**
-- Kunci kebijakan penilaian: bobot skor 60/30/10 (sudah diputuskan; tinggal definisi dimensi ketiga), cap, band rating, tabel konversi, aturan prorata.
+- Kunci kebijakan penilaian: bobot skor 60/30/10 (diputuskan; dimensi ketiga = Kontribusi tambahan), cap, band rating, tabel konversi, aturan prorata.
 - ERD detail 14 domain dan data dictionary, disesuaikan dengan tabel master yang dipakai ulang (bagian A).
 - Wireframe portal: ESS, Manager, HR, Executive, di atas layout Sximo (`layouts/app.blade.php`).
 - Audit kualitas data pegawai lama, verifikasi hukum PDP.
@@ -188,6 +188,8 @@ Urutan pengerjaan:
 10. `performance_improvement_plans`, dashboard kinerja sesuai data scope.
 
 **Gerbang keluar:** simulasi satu siklus penuh dengan data uji.
+
+**Status 2026-11-17 — gelombang 1 selesai (132 tes lulus; diuji di browser di tenant DEMO):** model skor 60/30/10 dengan dimensi ketiga **Kontribusi tambahan** (ADR 0001 no. 8). Mesin skor murni `ScoreCalculator` (higher/lower aman saat R = 0 dan target 0, range dengan penalti per 1% simpangan, milestone dengan faktor keterlambatan, kualitatif via rubrik; cap per KPI; What; konversi 1–5 dengan interpolasi; skor akhir mentah vs dibatasi 100; band; bobot per level jabatan; prorata yang menggabung penugasan < 90 hari dan status not rated). Menu "Kinerja": Kebijakan Kinerja berversi (`performance_policies`, draft → berlaku → pensiun, terbit butuh izin Approve, validasi total bobot/batas KPI/konversi naik/band) dan Periode & Sasaran (`performance_periods`: membuka periode mengunci salinan kebijakan; `strategic_objectives` korporat → direktorat → divisi → tim dengan bobot kontribusi; rekap status rencana pegawai sesuai data scope). Layanan Mandiri › "Rencana Kinerja Saya": rencana per penugasan primer yang beririsan dengan periode (`performance_plans`, `performance_objectives`), editor KPI Alpine.js dengan total bobot langsung, validasi kebijakan di server (3–10 KPI, 5–40%, total 100%, target/rentang/milestone 100%/rubrik 5 level), tautan ke sasaran strategis dan cascade dari KPI atasan yang sudah disetujui; diajukan ke atasan lewat workflow `performance_plan` (ditolak = dikembalikan dengan catatan, bisa ditarik). Diperbaiki: audit kebijakan gagal untuk nilai array (pembaruan kini dalam transaksi). **Gelombang 2 (belum):** tahap monitoring — `performance_updates`, unggah bukti per tenant, check-in, mid-year review, `kpi_change_requests` dengan versi KPI; **gelombang 3:** penilaian self → atasan → one-over-one (How + Kontribusi), kalibrasi, keberatan 14 hari, pengesahan & snapshot, PIP, dasbor.
 
 ### Fase 4 — Testing & Pilot (minggu 33–40)
 - Uji fungsional per kriteria MVP (blueprint bagian 22), uji isolasi tenant, uji SoD.
