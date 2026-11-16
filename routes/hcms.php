@@ -67,6 +67,14 @@ Route::get('performance/my-plans', 'Performance\MyPlansController@index');
 Route::get('performance/my-plans/{plan}', 'Performance\MyPlansController@edit')->whereNumber('plan');
 Route::put('performance/my-plans/{plan}', 'Performance\MyPlansController@update')->whereNumber('plan')->middleware('throttle:30,1,plans');
 Route::post('performance/my-plans/{plan}/cancel', 'Performance\MyPlansController@cancel')->whereNumber('plan');
+Route::get('performance/plans/{plan}/monitoring', 'Performance\MonitoringController@show')->whereNumber('plan');
+Route::post('performance/kpis/{objective}/updates', 'Performance\MonitoringController@storeUpdate')->whereNumber('objective')->middleware('throttle:30,1,kpi-updates');
+Route::get('performance/evidences/{evidence}', 'Performance\MonitoringController@evidence')->whereNumber('evidence');
+Route::post('performance/plans/{plan}/checkins', 'Performance\MonitoringController@storeCheckin')->whereNumber('plan');
+Route::post('performance/checkins/{checkin}/complete', 'Performance\MonitoringController@completeCheckin')->whereNumber('checkin');
+Route::get('performance/plans/{plan}/change-request', 'Performance\MonitoringController@changeForm')->whereNumber('plan');
+Route::post('performance/plans/{plan}/change-request', 'Performance\MonitoringController@submitChange')->whereNumber('plan');
+Route::get('performance/team', 'Performance\TeamController@index');
 
 Route::get('competency/reports','Competency\ReportsController@index');
 Route::get('competency/reports/employees/{employee}', 'Competency\ReportsController@employee')->whereNumber('employee');

@@ -27,7 +27,10 @@
 						<td class="text-center {{ abs($p->weight_total - 100) < 0.01 ? 'text-success' : 'text-danger' }}">{{ $p->weight_total + 0 }}%</td>
 						<td><span class="badge {{ ['approved' => 'bg-success', 'submitted' => 'bg-info', 'returned' => 'bg-warning text-dark', 'draft' => 'bg-light text-dark'][$p->status] }}">{{ $statuses[$p->status] }}</span></td>
 						<td class="text-end"><a href="{{ url('performance/my-plans/'.$p->id) }}" class="btn btn-sm {{ in_array($p->status, ['draft', 'returned']) && $period->status === 'planning' ? 'btn-primary' : 'btn-outline-primary' }}">
-							{{ in_array($p->status, ['draft', 'returned']) && $period->status === 'planning' ? 'Susun KPI' : 'Lihat' }}</a></td>
+							{{ in_array($p->status, ['draft', 'returned']) && $period->status === 'planning' ? 'Susun KPI' : 'Lihat' }}</a>
+							@if($p->status === 'approved' && $period->status !== 'planning')
+								<a href="{{ url('performance/plans/'.$p->id.'/monitoring') }}" class="btn btn-sm btn-primary">Monitoring</a>
+							@endif</td>
 					</tr>
 				@empty
 					<tr><td colspan="6" class="text-muted">Tidak ada penugasan primer pada periode ini.</td></tr>

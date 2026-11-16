@@ -10,6 +10,9 @@
 		@elseif($canApprove && $period->status === 'planning')
 			<form method="POST" action="{{ url('performance/periods/'.$period->id.'/advance') }}" onsubmit="return confirm('Akhiri tahap perencanaan dan mulai monitoring?')">
 				@csrf<button class="btn btn-sm btn-outline-primary" type="submit">Mulai tahap monitoring</button></form>
+		@elseif($canApprove && $period->status === 'monitoring')
+			<form method="POST" action="{{ url('performance/periods/'.$period->id.'/advance') }}" onsubmit="return confirm('Akhiri monitoring dan mulai tahap penilaian? Semua mid-year review harus sudah selesai.')">
+				@csrf<button class="btn btn-sm btn-outline-primary" type="submit">Mulai tahap penilaian</button></form>
 		@endif
 		<a href="{{ url('performance/periods') }}" class="btn btn-sm btn-outline-secondary">Kembali</a>
 	</div>
@@ -107,7 +110,8 @@
 					<tr><td>{{ $p->full_name }} <span class="small text-muted">{{ $p->employee_number }}</span></td>
 						<td class="small">{{ $p->position_title ?: '—' }}</td>
 						<td><span class="badge {{ ['approved' => 'bg-success', 'submitted' => 'bg-info', 'returned' => 'bg-warning text-dark', 'draft' => 'bg-light text-dark'][$p->status] ?? 'bg-secondary' }}">{{ $planStatuses[$p->status] ?? 'Belum dibuat' }}</span></td>
-						<td class="small">{{ $p->submitted_at ?: '—' }}</td></tr>
+						<td class="small">{{ $p->submitted_at ?: '—' }}
+							@if($p->status === 'approved' && !in_array($period->status, ['draft', 'planning']))<a href="{{ url('performance/plans/'.$p->plan_id.'/monitoring') }}" class="ms-1">monitoring</a>@endif</td></tr>
 				@empty
 					<tr><td colspan="4" class="text-muted">Tidak ada pegawai dalam cakupan data Anda.</td></tr>
 				@endforelse

@@ -91,6 +91,8 @@ final class HcmsModules
                 'access' => $hrManage + $orgRead + [Roles::LINE_MANAGER => self::READ]],
             'myplans' => ['title' => 'Rencana Kinerja Saya', 'table' => 'performance_plans', 'url' => 'performance/my-plans', 'parent' => 'layanan', 'icon' => 'fa fa-bullseye', 'title_id' => 'Rencana Kinerja Saya',
                 'access' => self::everyone(), 'register_module' => false],
+            'myteamperformance' => ['title' => 'Kinerja Tim Saya', 'table' => 'performance_plans', 'url' => 'performance/team', 'parent' => 'layanan', 'icon' => 'fa fa-users-cog', 'title_id' => 'Kinerja Tim Saya',
+                'access' => self::everyone(), 'register_module' => false],
             'myassessments' => ['title' => 'Asesmen Saya', 'table' => 'assessment_raters', 'url' => 'competency/my-assessments', 'parent' => 'layanan', 'icon' => 'fa fa-star', 'title_id' => 'Asesmen Saya',
                 'access' => self::everyone(), 'register_module' => false],
 

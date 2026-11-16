@@ -70,12 +70,23 @@ final class PerformancePeriods
             'Periode kinerja dibuka, kebijakan v'.$policy->version.' dikunci');
     }
 
-    /** Maju satu tahap (gelombang 1: perencanaan → monitoring). */
+    /**
+     * Maju satu tahap: perencanaan → monitoring → penilaian.
+     * Ke tahap penilaian hanya bila semua rencana yang disetujui sudah menjalani mid-year review.
+     */
     public function advance(int $id): string
     {
         $period = $this->find($id);
-        $next = ['planning' => 'monitoring'][$period->status]
+        $next = ['planning' => 'monitoring', 'monitoring' => 'assessment'][$period->status]
             ?? throw ValidationException::withMessages(['period' => 'Tahap berikutnya belum tersedia untuk status ini.']);
+
+        if ($next === 'assessment') {
+            $missing = app(PerformanceMonitoring::class)->missingMidyear($period->id);
+            if ($missing->isNotEmpty()) {
+                throw ValidationException::withMessages(['period' => 'Mid-year review belum selesai untuk '.$missing->count().' rencana: '
+                    .$missing->take(5)->pluck('full_name')->implode(', ').($missing->count() > 5 ? ', …' : '').'.']);
+            }
+        }
 
         DB::table('performance_periods')->where('id', $id)->update(['status' => $next, 'updated_at' => now()]);
         AuditLog::updated('performance_periods', $id, ['status' => $period->status], ['status' => $next], 'Tahap periode kinerja: '.self::STATUS[$next]);

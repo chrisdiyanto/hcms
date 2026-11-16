@@ -3,6 +3,7 @@
 namespace App\Domain\Workflow;
 
 use App\Domain\Employee\Workflow\EmployeeChangeRequestSubject;
+use App\Domain\Performance\Workflow\KpiChangeRequestSubject;
 use App\Domain\Performance\Workflow\PerformancePlanSubject;
 use App\Domain\Workflow\Contracts\WorkflowSubject;
 use App\Support\Security\Roles;
@@ -37,6 +38,13 @@ final class WorkflowRegistry
             PerformancePlanSubject::CODE => [
                 'name' => 'Persetujuan rencana kinerja (KPI)',
                 'subject' => PerformancePlanSubject::class,
+                'steps' => [
+                    ['name' => 'Persetujuan atasan langsung', 'approver' => ['type' => 'supervisor', 'levels' => 1], 'sla_hours' => 72],
+                ],
+            ],
+            KpiChangeRequestSubject::CODE => [
+                'name' => 'Perubahan KPI (change request)',
+                'subject' => KpiChangeRequestSubject::class,
                 'steps' => [
                     ['name' => 'Persetujuan atasan langsung', 'approver' => ['type' => 'supervisor', 'levels' => 1], 'sla_hours' => 72],
                 ],
