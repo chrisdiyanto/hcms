@@ -54,4 +54,5 @@ Route::middleware('auth')->group(function () {
     include base_path('routes/core.php');
     include base_path('routes/services.php');
     include base_path('routes/module.php');
+    include base_path('routes/hcms.php');
 });

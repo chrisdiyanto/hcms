@@ -151,7 +151,9 @@ class AllunitController extends Controller {
 				if ($validator->passes()) 
 				{
 					$data = $this->validatePost( $request );
+					$unitBefore = \App\Domain\Organization\Services\OrganizationHistory::snapshot($request->input( $this->info['key']));
 					$id = $this->model->insertRow($data , $request->input( $this->info['key']));
+					\App\Domain\Organization\Services\OrganizationHistory::record((int) $id, $unitBefore);
 					\App\Domain\Organization\Services\OrgUnitClosure::rebuild(\App\Support\Tenancy\TenantScope::tenantId());
 					
 					/* Insert logs */
@@ -268,6 +270,7 @@ class AllunitController extends Controller {
 		// delete multipe rows 
 		if(count($request->input('ids')) >=1)
 		{
+			\App\Domain\Organization\Services\OrganizationHistory::recordDeleted((array) $request->input('ids'));
 			$this->model->destroy($request->input('ids'));
 			\App\Domain\Organization\Services\OrgUnitClosure::rebuild(\App\Support\Tenancy\TenantScope::tenantId());
 			

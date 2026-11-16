@@ -6,7 +6,6 @@ use App\Domain\Organization\Services\OrgUnitClosure;
 use App\Support\Security\DataScope;
 use App\Support\Security\Roles;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Tests\Concerns\InteractsWithTenants;
 use Tests\TestCase;
 
@@ -35,20 +34,6 @@ class IamTest extends TestCase
         $this->units['sek'] = $this->makeUnit($this->tenant, 'Seksi', $this->units['div']);
         $this->units['lain'] = $this->makeUnit($this->tenant, 'Divisi Lain');
         OrgUnitClosure::rebuild($this->tenant);
-    }
-
-    private function makeUnit(int $tenantId, string $name, ?int $parent = null): int
-    {
-        $categoryId = DB::table('unit_category')->insertGetId(['tenant_id' => $tenantId, 'slug_unit_category' => Str::random(8), 'unit_category' => 'Kat', 'unit_category_code' => 'K', 'unit_category_explan' => '']);
-        $typeId = DB::table('unit_type')->insertGetId(['tenant_id' => $tenantId, 'unit_type' => 'Tipe', 'keterangan' => '', 'status' => 1]);
-        $companyId = DB::table('corporate')->where('tenant_id', $tenantId)->value('id_corporate') ?? $this->makeCompany($tenantId, 'C'.$tenantId);
-
-        return DB::table('unit')->insertGetId([
-            'tenant_id' => $tenantId, 'uuid' => (string) Str::uuid7(), 'slug_unit' => Str::slug($name).'-'.Str::random(4),
-            'parent_id' => $parent, 'unit_name' => $name, 'unit_code' => strtoupper(Str::random(4)),
-            'id_unit_category' => $categoryId, 'id_corporate' => $companyId, 'unit_addres' => '', 'unit_explan' => '',
-            'id_unit_type' => $typeId, 'status' => 1,
-        ]);
     }
 
     public function test_lima_belas_peran_blueprint_tersedia_dengan_akses_default(): void

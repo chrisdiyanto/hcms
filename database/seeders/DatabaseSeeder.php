@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             tb_moduleSeeder::class,
             tb_groups_accessSeeder::class,
             RolesSeeder::class,
+            HcmsModulesSeeder::class,
             tb_pagesSeeder::class,
             IconcategoriesSeeder::class,
             IconSeeder::class,

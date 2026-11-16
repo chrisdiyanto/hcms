@@ -53,6 +53,31 @@ trait InteractsWithTenants
         ]);
     }
 
+    /** Unit organisasi; company = $companyId atau company pertama tenant. */
+    protected function makeUnit(int $tenantId, string $name, ?int $parent = null, ?int $companyId = null): int
+    {
+        $categoryId = DB::table('unit_category')->insertGetId(['tenant_id' => $tenantId, 'slug_unit_category' => Str::random(8), 'unit_category' => 'Kat', 'unit_category_code' => 'K', 'unit_category_explan' => '']);
+        $typeId = DB::table('unit_type')->insertGetId(['tenant_id' => $tenantId, 'unit_type' => 'Tipe', 'keterangan' => '', 'status' => 1]);
+        $companyId ??= DB::table('corporate')->where('tenant_id', $tenantId)->value('id_corporate') ?? $this->makeCompany($tenantId, 'C'.$tenantId);
+
+        return DB::table('unit')->insertGetId([
+            'tenant_id' => $tenantId, 'uuid' => (string) Str::uuid7(), 'slug_unit' => Str::slug($name).'-'.Str::random(4),
+            'parent_id' => $parent, 'unit_name' => $name, 'unit_code' => strtoupper(Str::random(4)),
+            'id_unit_category' => $categoryId, 'id_corporate' => $companyId, 'unit_addres' => '', 'unit_explan' => '',
+            'id_unit_type' => $typeId, 'status' => 1,
+        ]);
+    }
+
+    /** Beri grup hak tertentu pada modul (baris tb_groups_access). */
+    protected function grantModule(string $module, int $groupId, array $tasks): void
+    {
+        $moduleId = DB::table('tb_module')->where('module_name', $module)->value('module_id');
+        DB::table('tb_groups_access')->updateOrInsert(
+            ['group_id' => $groupId, 'module_id' => $moduleId],
+            ['access_data' => json_encode(array_fill_keys($tasks, '1'))]
+        );
+    }
+
     protected function makeUser(?int $tenantId, int $groupId = 2, ?string $username = null): User
     {
         $username ??= 'user'.Str::lower(Str::random(6));

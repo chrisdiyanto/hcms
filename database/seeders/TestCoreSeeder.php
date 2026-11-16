@@ -21,6 +21,7 @@ class TestCoreSeeder extends Seeder
             tb_moduleSeeder::class,
             tb_groups_accessSeeder::class,
             RolesSeeder::class,
+            HcmsModulesSeeder::class,
         ]));
 
         // Sama dengan migrasi 2026_11_16_100200 (yang berjalan sebelum tb_module terisi saat tes)
