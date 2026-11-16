@@ -2,6 +2,7 @@
 
 namespace App\Domain\Tenancy\Actions;
 
+use App\Domain\Competency\Services\CompetencyFramework;
 use App\Models\Tenant;
 use App\Support\Security\Roles;
 use App\Support\Tenancy\TenantContext;
@@ -68,6 +69,7 @@ final class CreateTenant
 
                 // Kategori & tipe unit wajib ada sebelum unit pertama bisa dibuat
                 self::seedUnitReferences((int) TenantScope::tenantId());
+                CompetencyFramework::ensureCategories((int) TenantScope::tenantId());
             });
 
             return $model;

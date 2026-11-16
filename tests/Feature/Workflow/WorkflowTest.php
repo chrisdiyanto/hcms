@@ -234,6 +234,7 @@ class WorkflowTest extends TestCase
         $this->assertSame(0, DB::table('workflow_instances')->count());
         $this->get('/ess/profile')->assertOk()->assertSee('Tidak ada approver');
     }
+
     public function test_batal_oleh_pengaju_dan_satu_pengajuan_aktif(): void
     {
         $this->submitEss();

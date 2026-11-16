@@ -164,6 +164,8 @@ Urutan pengerjaan:
 5. Output: Competency Gap Report (individu/unit/job), Position Readiness, Organizational Competency Heatmap (ECharts heatmap), draf item IDP untuk gap negatif kompetensi kritis.
 6. Tes unit rumus JFI memakai contoh blueprint 7.4 (hasil wajib 71,3%).
 
+**Status 2026-11-17 — gelombang 1 selesai (113 tes lulus; diuji di browser di tenant DEMO):** menu "Kompetensi"; kamus berversi (`competency_framework_versions`: draft → berlaku → pensiun; hanya draft yang bisa diubah; draft baru menyalin versi berlaku; terbit butuh izin Approve dan setiap kompetensi aktif wajib punya level 1–5 dengan 2–4 indikator; saat terbit profil job & posisi dipindah ke versi baru berdasarkan kode); kategori Core/Leadership/Functional/Digital otomatis per tenant; profil kompetensi job (level wajib + kritikalitas 3/2/1) dan override posisi (ubah, kecualikan, tambahan khusus posisi, alasan wajib) via `CompetencyProfile`; kalkulator murni `JobFitCalculator` (contoh blueprint = 71,3%, kelebihan dibatasi 100%, band 90/75 dapat dikonfigurasi) dan `RaterAggregator` (bobot 50/20/20/10, rekan/bawahan < 3 penilai gugur dan bobotnya dibagi ulang, assessment center menggantikan). Bug ditemukan tes: pemindahan profil saat terbit diam-diam tidak memindah (pluck dua kolom `id`). **Gelombang 2 (belum):** asesmen multi-penilai (`competency_assessments`, penilai, detail, masa berlaku 24 bulan), `employee_competencies` / `competency_gaps` / `job_fit_results` (job batch), laporan gap individu/unit/job, Position Readiness, heatmap ECharts, draf item IDP untuk gap kompetensi kritis; gerbang: satu job family pilot terpetakan penuh.
+
 **Gerbang keluar:** satu job family pilot terpetakan penuh.
 
 ### Fase 3 — Performance Management (minggu 23–32)

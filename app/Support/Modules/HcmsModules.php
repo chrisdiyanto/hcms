@@ -25,6 +25,7 @@ final class HcmsModules
         'layanan' => ['name' => 'Layanan Mandiri', 'id' => 'Layanan Mandiri', 'icon' => 'fa fa-user-circle', 'position' => 'sidebar'],
         'kepegawaian' => ['name' => 'Kepegawaian', 'id' => 'Kepegawaian', 'icon' => 'fa fa-users', 'position' => 'sidebar'],
         'organisasi' => ['name' => 'Organisasi', 'id' => 'Organisasi', 'icon' => 'fa fa-sitemap', 'position' => 'sidebar'],
+        'kompetensi' => ['name' => 'Kompetensi', 'id' => 'Kompetensi', 'icon' => 'fa fa-medal', 'position' => 'sidebar'],
     ];
 
     public static function definitions(): array
@@ -72,6 +73,12 @@ final class HcmsModules
 
             'dataimport' => ['title' => 'Migrasi Data', 'table' => 'import_batches', 'url' => 'core/import', 'parent' => 'Control Panel', 'icon' => 'fa fa-file-import', 'title_id' => 'Migrasi Data',
                 'access' => [Roles::SUPER_ADMIN => self::FULL, Roles::TENANT_ADMIN => self::FULL, Roles::HR_ADMIN => self::FULL]],
+
+            // Competency Management
+            'competencies' => ['title' => 'Kamus Kompetensi', 'table' => 'competencies', 'url' => 'competency/framework', 'parent' => 'kompetensi', 'icon' => 'fa fa-book', 'title_id' => 'Kamus Kompetensi',
+                'access' => $hrManage + $orgRead + [Roles::LINE_MANAGER => self::READ, Roles::ASSESSOR => self::READ, Roles::EMPLOYEE => self::READ]],
+            'jobprofiles' => ['title' => 'Profil Kompetensi Job', 'table' => 'job_competencies', 'url' => 'competency/job-profiles', 'parent' => 'kompetensi', 'icon' => 'fa fa-clipboard-list', 'title_id' => 'Profil Kompetensi Job',
+                'access' => $hrManage + $orgRead + [Roles::LINE_MANAGER => self::READ, Roles::ASSESSOR => self::READ]],
 
             // Employee Management — isi daftar tetap dibatasi data scope tiap peran
             'employees' => ['title' => 'Pegawai', 'table' => 'employees', 'url' => 'employees', 'parent' => 'kepegawaian', 'icon' => 'fa fa-id-card', 'title_id' => 'Pegawai',

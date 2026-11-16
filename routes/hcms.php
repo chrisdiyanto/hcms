@@ -26,6 +26,21 @@ Route::post('employees/{employee}/assignments/{assignment}/end', 'Employee\Emplo
 Route::post('employees/{employee}/terminate', 'Employee\EmployeeAssignmentsController@terminate')->whereNumber('employee');
 Route::post('employees/{employee}/terminations/{termination}/cancel', 'Employee\EmployeeAssignmentsController@cancelTermination')->whereNumber(['employee', 'termination']);
 
+// Competency Management
+Route::get('competency/framework', 'Competency\FrameworkController@index');
+Route::post('competency/framework/draft', 'Competency\FrameworkController@createDraft');
+Route::post('competency/framework/{version}/publish', 'Competency\FrameworkController@publish')->whereNumber('version');
+Route::get('competency/framework/{version}/competencies/create', 'Competency\FrameworkController@create')->whereNumber('version');
+Route::post('competency/framework/{version}/competencies', 'Competency\FrameworkController@store')->whereNumber('version');
+Route::get('competency/competencies/{competency}/edit', 'Competency\FrameworkController@edit')->whereNumber('competency');
+Route::put('competency/competencies/{competency}', 'Competency\FrameworkController@update')->whereNumber('competency');
+Route::delete('competency/competencies/{competency}', 'Competency\FrameworkController@destroy')->whereNumber('competency');
+Route::get('competency/job-profiles', 'Competency\JobProfilesController@index');
+Route::get('competency/job-profiles/{job}', 'Competency\JobProfilesController@edit')->whereNumber('job');
+Route::put('competency/job-profiles/{job}', 'Competency\JobProfilesController@update')->whereNumber('job');
+Route::get('competency/positions/{position}', 'Competency\JobProfilesController@position')->whereNumber('position');
+Route::put('competency/positions/{position}', 'Competency\JobProfilesController@updatePosition')->whereNumber('position');
+
 // Employee Self Service
 Route::get('ess/profile', 'Employee\EssController@profile');
 Route::post('ess/change-requests', 'Employee\EssController@submit')->middleware('throttle:10,1,ess');
