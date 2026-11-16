@@ -35,3 +35,32 @@
     content: none;
     display: none;
 }
+
+/*
+ * Tombol pilihan Bootstrap (.btn-check + label.btn), mis. skor 1–5 di form asesmen.
+ * Tema Sximo menggambar lingkaran radio di label::before/::after dan memberi
+ * padding-left/height tetap pada label; kembalikan ke gaya tombol Bootstrap.
+ */
+[type="radio"].btn-check + label.btn {
+    padding: 0.25rem 0.5rem;
+    height: auto;
+    line-height: 1.5;
+    font-size: 0.875rem;
+}
+
+[type="radio"].btn-check + label.btn::before,
+[type="radio"].btn-check + label.btn::after {
+    content: none;
+    display: none;
+}
+
+[type="radio"].btn-check:not(:checked) + label.btn-outline-primary {
+    color: var(--bs-btn-color);
+    background-color: transparent;
+}
+
+[type="radio"].btn-check:checked + label.btn-outline-primary {
+    color: #fff;
+    background-color: var(--bs-btn-hover-bg);
+    border-color: var(--bs-btn-hover-bg);
+}

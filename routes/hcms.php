@@ -40,6 +40,18 @@ Route::get('competency/job-profiles/{job}', 'Competency\JobProfilesController@ed
 Route::put('competency/job-profiles/{job}', 'Competency\JobProfilesController@update')->whereNumber('job');
 Route::get('competency/positions/{position}', 'Competency\JobProfilesController@position')->whereNumber('position');
 Route::put('competency/positions/{position}', 'Competency\JobProfilesController@updatePosition')->whereNumber('position');
+Route::get('competency/assessments', 'Competency\AssessmentsController@index');
+Route::get('competency/assessments/create', 'Competency\AssessmentsController@create');
+Route::post('competency/assessments', 'Competency\AssessmentsController@store');
+Route::get('competency/assessments/{assessment}', 'Competency\AssessmentsController@show')->whereNumber('assessment');
+Route::post('competency/assessments/{assessment}/assessment-center', 'Competency\AssessmentsController@assessmentCenter')->whereNumber('assessment');
+Route::post('competency/assessments/{assessment}/close', 'Competency\AssessmentsController@close')->whereNumber('assessment');
+Route::post('competency/assessments/{assessment}/cancel', 'Competency\AssessmentsController@cancel')->whereNumber('assessment');
+Route::get('competency/my-assessments', 'Competency\MyAssessmentsController@index');
+Route::get('competency/my-assessments/{rater}', 'Competency\MyAssessmentsController@edit')->whereNumber('rater');
+Route::put('competency/my-assessments/{rater}', 'Competency\MyAssessmentsController@update')->whereNumber('rater')->middleware('throttle:20,1,assessments');
+Route::get('competency/reports', 'Competency\ReportsController@index');
+Route::get('competency/reports/employees/{employee}', 'Competency\ReportsController@employee')->whereNumber('employee');
 
 // Employee Self Service
 Route::get('ess/profile', 'Employee\EssController@profile');

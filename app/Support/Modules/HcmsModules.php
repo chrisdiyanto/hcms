@@ -79,6 +79,12 @@ final class HcmsModules
                 'access' => $hrManage + $orgRead + [Roles::LINE_MANAGER => self::READ, Roles::ASSESSOR => self::READ, Roles::EMPLOYEE => self::READ]],
             'jobprofiles' => ['title' => 'Profil Kompetensi Job', 'table' => 'job_competencies', 'url' => 'competency/job-profiles', 'parent' => 'kompetensi', 'icon' => 'fa fa-clipboard-list', 'title_id' => 'Profil Kompetensi Job',
                 'access' => $hrManage + $orgRead + [Roles::LINE_MANAGER => self::READ, Roles::ASSESSOR => self::READ]],
+            'assessments' => ['title' => 'Asesmen Kompetensi', 'table' => 'competency_assessments', 'url' => 'competency/assessments', 'parent' => 'kompetensi', 'icon' => 'fa fa-star-half-alt', 'title_id' => 'Asesmen Kompetensi',
+                'access' => $hrManage + [Roles::ASSESSOR => self::FULL]],
+            'competencyreports' => ['title' => 'Laporan Kompetensi', 'table' => 'job_fit_results', 'url' => 'competency/reports', 'parent' => 'kompetensi', 'icon' => 'fa fa-chart-bar', 'title_id' => 'Laporan Kompetensi',
+                'access' => $hrManage + $orgRead + [Roles::LINE_MANAGER => self::READ, Roles::ASSESSOR => self::READ]],
+            'myassessments' => ['title' => 'Asesmen Saya', 'table' => 'assessment_raters', 'url' => 'competency/my-assessments', 'parent' => 'layanan', 'icon' => 'fa fa-star', 'title_id' => 'Asesmen Saya',
+                'access' => self::everyone(), 'register_module' => false],
 
             // Employee Management — isi daftar tetap dibatasi data scope tiap peran
             'employees' => ['title' => 'Pegawai', 'table' => 'employees', 'url' => 'employees', 'parent' => 'kepegawaian', 'icon' => 'fa fa-id-card', 'title_id' => 'Pegawai',
