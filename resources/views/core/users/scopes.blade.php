@@ -110,6 +110,27 @@
 
 		<div class="card">
 			<div class="card-body">
+				<h5 class="card-title">Verifikasi dua langkah</h5>
+				<p class="mb-2">
+					@if($mfaEnabledAt)
+						<span class="badge bg-success">Aktif</span> <span class="small text-muted">sejak {{ $mfaEnabledAt }}</span>
+					@else
+						<span class="badge bg-secondary">Belum aktif</span>
+					@endif
+					@if($mfaRequired)<span class="badge bg-warning text-dark">Wajib untuk perannya</span>@endif
+				</p>
+				@if($mfaEnabledAt && ! $isSelf)
+					<form method="POST" action="{{ url('core/users/'.$target->id.'/mfa-reset') }}"
+						onsubmit="return confirm('Reset MFA pengguna ini? Ia harus mendaftar ulang saat login berikutnya.')">
+						@csrf
+						<button class="btn btn-sm btn-outline-danger" type="submit">Reset MFA</button>
+					</form>
+				@endif
+			</div>
+		</div>
+
+		<div class="card">
+			<div class="card-body">
 				<h5 class="card-title">Riwayat login</h5>
 				<table class="table table-sm mb-0">
 					<tbody>

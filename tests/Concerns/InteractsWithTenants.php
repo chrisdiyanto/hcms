@@ -72,10 +72,14 @@ trait InteractsWithTenants
         return User::findOrFail($id);
     }
 
-    /** Login sebagai pengguna dengan sesi Sximo (gid/uid) yang biasa diisi saat sign-in. */
-    protected function actingAsSximo(User $user, int $groupId = 2): static
+    /**
+     * Login sebagai pengguna dengan sesi Sximo (gid/uid) yang biasa diisi saat sign-in.
+     * MFA dianggap sudah lolos kecuali $mfaPassed = false (tes MFA).
+     */
+    protected function actingAsSximo(User $user, int $groupId = 2, bool $mfaPassed = true): static
     {
         return $this->actingAs($user)->withSession([
+            'mfa_passed' => $mfaPassed,
             'gid' => $groupId,
             'uid' => $user->id,
             'eid' => $user->email,

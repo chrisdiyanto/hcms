@@ -57,6 +57,9 @@
 						<td>{{ optional($tenant->activated_at)->format('Y-m-d') ?? '-' }}</td>
 						<td class="text-end text-nowrap">
 							<a href="{{ url('core/tenants/'.$tenant->uuid.'/edit') }}" class="btn btn-sm btn-outline-primary">Ubah</a>
+							@if((int) auth()->user()->tenant_id !== $tenant->id)
+								<a href="{{ url('core/tenants/'.$tenant->uuid.'/break-glass') }}" class="btn btn-sm btn-outline-danger" title="Akses darurat ke data tenant">Break-glass</a>
+							@endif
 							@if($tenant->status === 'active')
 								<form method="POST" action="{{ url('core/tenants/'.$tenant->uuid.'/status') }}" class="d-inline"
 									onsubmit="return confirm('Tangguhkan tenant {{ $tenant->code }}? Semua penggunanya akan ter-logout.')">

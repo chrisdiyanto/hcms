@@ -229,8 +229,8 @@ $extraBodyClasses = implode(' ', $bodyClasses);
         <div class="page-wrapper">
           <div class="container-fluid">
           <div class="ajaxLoading"></div>
-         
-            @yield('content') 
+            @includeWhen(isset($breakGlass), 'partials.break-glass-banner')
+            @yield('content')
           </div>      
     </div>
     <!-- /#wrapper -->

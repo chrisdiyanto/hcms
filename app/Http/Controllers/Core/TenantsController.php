@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Core;
 
+use App\Domain\Security\Services\BreakGlass;
 use App\Domain\Tenancy\Actions\CreateTenant;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
@@ -132,6 +133,52 @@ class TenantsController extends Controller
         $this->logActivity($request, $tenant, 'Status tenant '.$tenant->code.' menjadi '.$data['status']);
 
         return redirect('core/tenants')->with('message', __('core.note_success'))->with('status', 'success');
+    }
+
+    public function breakGlassForm(Tenant $tenant)
+    {
+        if ($this->isOwnTenant($tenant)) {
+            return redirect('core/tenants')->with('message', 'Break-glass tidak diperlukan untuk tenant akun Anda sendiri.')->with('status', 'error');
+        }
+
+        return view('core.tenants.break-glass', [
+            'pageTitle' => 'Break-glass',
+            'pageNote' => 'Akses darurat ke data '.$tenant->name,
+            'tenant' => $tenant,
+            'durations' => BreakGlass::DURATIONS,
+        ]);
+    }
+
+    public function breakGlassStart(Request $request, Tenant $tenant, BreakGlass $breakGlass)
+    {
+        if ($this->isOwnTenant($tenant)) {
+            return redirect('core/tenants')->with('message', 'Break-glass tidak diperlukan untuk tenant akun Anda sendiri.')->with('status', 'error');
+        }
+
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:20', 'max:1000'],
+            'minutes' => ['required', 'integer', Rule::in(BreakGlass::DURATIONS)],
+            'confirm' => ['accepted'],
+        ]);
+
+        $id = $breakGlass->start((int) auth()->id(), $tenant->id, $data['reason'], (int) $data['minutes'], $request->ip());
+        $request->session()->put(BreakGlass::SESSION_KEY, $id);
+
+        $this->logActivity($request, $tenant, 'Break-glass dimulai ('.$data['minutes'].' menit): '.$data['reason']);
+
+        return redirect('dashboard')->with('message', 'Break-glass aktif untuk '.$tenant->name.'. Semua aktivitas Anda dicatat.')->with('status', 'success');
+    }
+
+    public function breakGlassEnd(Request $request, BreakGlass $breakGlass)
+    {
+        $breakGlass->end((int) auth()->id(), (int) $request->session()->pull(BreakGlass::SESSION_KEY));
+
+        return redirect('core/tenants')->with('message', 'Break-glass diakhiri.')->with('status', 'success');
+    }
+
+    private function isOwnTenant(Tenant $tenant): bool
+    {
+        return (int) auth()->user()->tenant_id === (int) $tenant->id;
     }
 
     private function tenantRules(?Tenant $tenant = null): array

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Core;
 
+use App\Domain\Security\Services\Mfa;
 use App\Http\Controllers\Controller;
 use App\Models\Core\Users;
 use App\Support\Security\DataScope;
+use App\Support\Security\Roles;
 use App\Support\Tenancy\TenantScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -63,6 +65,8 @@ class DataScopesController extends Controller
             'effective' => $effective,
             'units' => TenantScope::table('unit')->orderBy('unit_name')->get(['id_unit', 'unit_name', 'unit_code']),
             'isSelf' => (int) $target->id === (int) auth()->id(),
+            'mfaEnabledAt' => $target->mfa_enabled_at ?? null,
+            'mfaRequired' => app(Mfa::class)->isRequiredFor((int) $target->id),
             'logins' => TenantScope::table('login_histories')->where('user_id', $target->id)
                 ->orderByDesc('created_at')->limit(10)->get(['event', 'ip_address', 'user_agent', 'created_at']),
         ]);
@@ -123,9 +127,37 @@ class DataScopesController extends Controller
         return redirect('core/users/'.$target->id.'/scopes')->with('message', __('core.note_success'))->with('status', 'success');
     }
 
+    /**
+     * Reset MFA pengguna lain (mis. ponsel hilang). Pengguna wajib mendaftar ulang
+     * saat login berikutnya. Tidak boleh untuk diri sendiri atau pengguna dengan
+     * peran setara/lebih tinggi, kecuali oleh Super Administrator.
+     */
+    public function resetMfa(Request $request, int $user, Mfa $mfa)
+    {
+        $target = $this->findUser($user);
+        if ($denied = $this->denySelf($target)) {
+            return $denied;
+        }
+
+        $actorLevel = (int) DB::table('tb_groups')->where('group_id', session('gid'))->value('level');
+        $targetLevel = (int) DB::table('tb_users_groups')->join('tb_groups', 'tb_groups.group_id', '=', 'tb_users_groups.group_id')
+            ->where('tb_users_groups.user_id', $target->id)->min('tb_groups.level');
+        if ((int) session('gid') !== Roles::id(Roles::SUPER_ADMIN) && $targetLevel && $targetLevel <= $actorLevel) {
+            return redirect('core/users/'.$target->id.'/scopes')
+                ->with('message', 'Anda tidak dapat mereset MFA pengguna dengan peran setara atau lebih tinggi.')->with('status', 'error');
+        }
+
+        $mfa->disable($target->id);
+        $this->audit($request, $target->id, 'MFA direset');
+
+        return redirect('core/users/'.$target->id.'/scopes')->with('message', 'MFA direset. Pengguna akan diminta mendaftar ulang.')->with('status', 'success');
+    }
+
     private function findUser(int $id): object
     {
-        return TenantScope::table('tb_users')->where('id', $id)->first() ?? abort(404);
+        // Kolom rahasia (password, mfa_secret) tidak ikut diambil
+        return TenantScope::table('tb_users')->where('id', $id)
+            ->first(['id', 'tenant_id', 'username', 'email', 'first_name', 'last_name', 'mfa_enabled_at']) ?? abort(404);
     }
 
     private function denySelf(object $target)

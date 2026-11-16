@@ -31,6 +31,13 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Logout::class, [$history, 'onLogout']);
         \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Failed::class, [$history, 'onFailed']);
 
+        // Setiap login baru wajib melewati MFA lagi (status lama di sesi tidak terbawa)
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Login::class, function () {
+            if (request()->hasSession()) {
+                request()->session()->forget(\App\Domain\Security\Services\Mfa::SESSION_PASSED);
+            }
+        });
+
         // Hanya percaya header X-Forwarded-* dari proxy yang terdaftar (TRUSTED_PROXIES),
         // supaya IP klien (dipakai IP block & rate limit) tidak bisa dipalsukan.
         // Fallback alamat pengirim email ke email aplikasi yang diatur di Sximo (cnf_email)

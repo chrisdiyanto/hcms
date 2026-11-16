@@ -41,7 +41,11 @@ return Application::configure(dirname(__DIR__))
         $middleware->append(\App\Http\Middleware\Cors::class);
 
         // Tenant aktif diisi sesudah sesi & auth tersedia (grup web)
-        $middleware->web(append: [\App\Http\Middleware\SetTenantContext::class]);
+        // MFA dicek sesudahnya, sebelum controller mana pun menyentuh data
+        $middleware->web(append: [
+            \App\Http\Middleware\SetTenantContext::class,
+            \App\Http\Middleware\EnforceMfa::class,
+        ]);
 
         $middleware->alias([
             'ipblocked' => \App\Http\Middleware\IpblockedMiddleware::class,
@@ -62,5 +66,19 @@ return Application::configure(dirname(__DIR__))
         // Trusted proxies diatur lewat config app.trusted_proxies (lihat AppServiceProvider)
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Akses data tenant tanpa tenant context (mis. akun platform tanpa break-glass)
+        $exceptions->render(function (\App\Support\Tenancy\Exceptions\MissingTenantContext $e, \Illuminate\Http\Request $request) {
+            $message = 'Data organisasi hanya dapat dibuka dari akun tenant atau lewat break-glass.';
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['status' => 'error', 'message' => $message], 403);
+            }
+
+            if (auth()->check() && (int) session('gid') === \App\Support\Security\Roles::id(\App\Support\Security\Roles::SUPER_ADMIN)
+                && ! $request->is('core/tenants')) {
+                return redirect('core/tenants')->with('status', 'error')->with('message', $message);
+            }
+
+            abort(403, $message);
+        });
     })->create();
