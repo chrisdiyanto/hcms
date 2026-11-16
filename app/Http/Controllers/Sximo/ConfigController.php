@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Validator, Input, Redirect; 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
+use App\Support\Config\SecretSettings;
 
 class ConfigController extends Controller {
 
@@ -402,11 +403,20 @@ class ConfigController extends Controller {
         $current = config('sximo');
         $merged = array_merge($current, $new_config);
 
-        $val  = "<?php \n"; 
+        // Kunci rahasia ke .env; config/sximo.php (masuk git) hanya berisi env()
+        try {
+            SecretSettings::writeEnv(collect(SecretSettings::SXIMO)->filter(fn ($env, $key) => array_key_exists($key, $new_config))
+                ->mapWithKeys(fn ($env, $key) => [$env => (string) $new_config[$key]])->all());
+        } catch (\RuntimeException $e) {
+            Log::error($e->getMessage());
+            return $e->getMessage();
+        }
+
+        $val  = "<?php \n";
         $val .= "return [\n";
         foreach ($merged as $key => $value) {
             // var_export meng-escape kutip sehingga nilai tidak bisa menyisipkan kode PHP
-            $val .= var_export((string) $key, true)." => ".var_export(is_array($value) ? $value : (string) $value, true).",\n";
+            $val .= var_export((string) $key, true)." => ".SecretSettings::exportValue(SecretSettings::SXIMO, (string) $key, $value).",\n";
         }
         $val .= "];\n";
 
@@ -545,18 +555,23 @@ class ConfigController extends Controller {
         $current = config('ai') ?? [];
         $merged = array_merge($current, $new_config);
 
+        // API key ke .env; config/ai.php (masuk git) hanya berisi env()
+        SecretSettings::writeEnv(collect(SecretSettings::AI)->filter(fn ($env, $key) => array_key_exists($key, $new_config))
+            ->mapWithKeys(fn ($env, $key) => [$env => (string) $new_config[$key]])->all());
+
         $val  = "<?php\n\n";
         $val .= "return [\n";
         foreach ($merged as $key => $value) {
-            $escapedValue = addcslashes($value, "'\\");
-            $val .= "    '{$key}' => '{$escapedValue}',\n";
+            $val .= '    '.var_export((string) $key, true).' => '.SecretSettings::exportValue(SecretSettings::AI, (string) $key, $value).",\n";
         }
         $val .= "];\n";
 
         $filename = base_path('config/ai.php');
-        $fp = fopen($filename, "w+");
-        fwrite($fp, $val);
-        fclose($fp);
+        file_put_contents($filename, $val, LOCK_EX);
+        if (function_exists('opcache_invalidate')) {
+            @opcache_invalidate($filename, true);
+        }
+        config(['ai' => $merged]);
     }
 
     public function getRag()
