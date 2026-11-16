@@ -85,11 +85,12 @@ class EmployeesController extends Controller
 
         return response()->streamDownload(function () use ($rows, $watermark) {
             $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF"); // BOM agar Excel membaca UTF-8
             fputcsv($out, [$watermark]);
             fputcsv($out, ['NIP', 'Nama', 'Company', 'Posisi', 'Unit', 'Status kerja', 'Bergabung', 'Status']);
             foreach ($rows as $e) {
                 fputcsv($out, [$e->employee_number, $e->full_name, $e->corporate_name, $e->position_title, $e->unit_name,
-                    self::EMPLOYMENT[$e->employment_status] ?? $e->employment_status, $e->join_date, $e->status]);
+                    self::EMPLOYMENT[$e->employment_status] ?? $e->employment_status, $e->join_date, $e->status === 'active' ? 'Aktif' : 'Berhenti']);
             }
             fclose($out);
         }, 'pegawai-'.now()->format('Ymd-His').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);

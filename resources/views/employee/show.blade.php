@@ -15,7 +15,8 @@
 
 @include('core.tenants.partials.flash')
 
-<div x-data="{ tab: (location.hash || '#summary').slice(1) }" @hashchange.window="tab = (location.hash || '#summary').slice(1)">
+{{-- Setelah error validasi, kembali ke tab form yang dikirim (field _tab) --}}
+<div x-data="{ tab: (location.hash || '#' + @js(old('_tab', 'summary'))).slice(1) }" @hashchange.window="tab = (location.hash || '#summary').slice(1)">
 	<ul class="nav nav-tabs mb-3">
 		@foreach(['summary' => 'Ringkasan', 'assignments' => 'Penugasan', 'records' => 'Data riwayat', 'history' => 'Riwayat status', 'termination' => 'Terminasi'] as $key => $label)
 			<li class="nav-item"><a class="nav-link" :class="{ active: tab === '{{ $key }}' || ('{{ $key }}' === 'records' && @js(array_keys($recordTypes)).includes(tab)) }" href="#{{ $key }}">{{ $label }}</a></li>
@@ -99,6 +100,7 @@
 			<h6 class="mt-3">Tambah penugasan</h6>
 			<p class="small text-muted">Penugasan primer baru otomatis mengakhiri penugasan primer sebelumnya sehari sebelum tanggal mulai (mutasi/promosi).</p>
 			<form method="POST" action="{{ url('employees/'.$e->id.'/assignments') }}" class="row g-2">
+				<input type="hidden" name="_tab" value="assignments">
 				@csrf
 				<div class="col-md-4"><select name="position_id" required class="form-select form-select-sm select2"><option value="">Pilih posisi</option>
 					@foreach($positions as $v => $l)<option value="{{ $v }}" @selected(old('position_id') == $v)>{{ $l }}</option>@endforeach</select></div>
@@ -140,6 +142,7 @@
 			</table>
 			@if($canEdit)
 			<form method="POST" action="{{ url('employees/'.$e->id.'/records/'.$type) }}" class="row g-2" x-show="adding" x-cloak>
+				<input type="hidden" name="_tab" value="{{ $type }}">
 				@csrf
 				@foreach($def['fields'] as $name => $f)
 					<div class="col-md">
@@ -192,9 +195,9 @@
 			@endforeach
 
 			@if($canApprove && $e->status === 'active' && !$terminations->contains('state', 'scheduled'))
-			<form method="POST" action="{{ url('employees/'.$e->id.'/terminate') }}" class="row g-2"
+			<form method="POST" action="{{ url('employees/'.$e->id.'/terminate') }}" class="row g-2" data-tab="termination"
 				onsubmit="return confirm('Proses terminasi pegawai ini? Tanggal hari ini atau lampau langsung diproses dan akun login dinonaktifkan.')">
-				@csrf
+				@csrf<input type="hidden" name="_tab" value="termination">
 				<div class="col-md-3"><label class="form-label small">Tanggal efektif</label><input type="date" name="termination_date" required class="form-control form-control-sm"></div>
 				<div class="col-md-3"><label class="form-label small">Jenis</label><select name="type" class="form-select form-select-sm">
 					@foreach($terminationTypes as $v => $l)<option value="{{ $v }}">{{ $l }}</option>@endforeach</select></div>

@@ -40,7 +40,8 @@ final class EmployeeIdentity
         }
 
         $existing = TenantScope::table('employee_identities')->where('employee_id', $employeeId);
-        if ($existing->exists()) {
+        $old = $existing->first();
+        if ($old) {
             $existing->update($data);
         } else {
             DB::table('employee_identities')->insert(TenantScope::fillForInsert('employee_identities', $data + [
@@ -48,8 +49,21 @@ final class EmployeeIdentity
             ]));
         }
 
-        $changed = array_intersect_key(self::FIELDS, array_intersect_key($values, self::FIELDS));
-        AuditLog::security('employee_identities', $employeeId, 'Identitas negara diperbarui: '.implode(', ', $changed), array_fill_keys(array_keys($changed), '[diubah]'));
+        // Sebut hanya kolom yang diisi, atau yang dikosongkan padahal sebelumnya berisi
+        $changed = [];
+        foreach (self::FIELDS as $field => $label) {
+            if (! array_key_exists($field, $values)) {
+                continue;
+            }
+            if ($data[$field] !== null) {
+                $changed[$field] = $label;
+            } elseif ($old && $old->{$field} !== null) {
+                $changed[$field] = $label.' (dikosongkan)';
+            }
+        }
+        if ($changed !== []) {
+            AuditLog::security('employee_identities', $employeeId, 'Identitas negara diperbarui: '.implode(', ', $changed), array_fill_keys(array_keys($changed), '[diubah]'));
+        }
     }
 
     /** @return array<string, ?string> nilai terbuka */

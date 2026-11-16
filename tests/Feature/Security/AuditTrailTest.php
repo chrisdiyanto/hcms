@@ -127,7 +127,7 @@ class AuditTrailTest extends TestCase
         $this->get('/employees/export')->assertSee('Alasan ekspor data');
         $csv = $this->get('/employees/export?export_reason=Laporan+headcount+bulanan')->assertOk()->streamedContent();
 
-        $this->assertStringStartsWith('"RAHASIA', $csv);
+        $this->assertStringStartsWith("\xEF\xBB\xBF\"RAHASIA", $csv);
         $this->assertStringContainsString('E-77', $csv);
         $this->assertStringNotContainsString('3171010101900077', $csv);
         $this->assertSame('employees', DB::table('data_export_logs')->value('module'));
@@ -179,5 +179,40 @@ class AuditTrailTest extends TestCase
         $row = DB::table('audit_logs')->where('auditable_type', 'corporate')->where('event', 'created')->first();
         $this->assertSame($target, (int) $row->tenant_id);
         $this->assertSame((int) DB::table('break_glass_accesses')->value('id'), (int) $row->break_glass_id);
+    }
+
+    public function test_perubahan_persyaratan_job_dan_alur_persetujuan_tercatat(): void
+    {
+        $this->post('/organization/job-families', ['code' => 'FIN', 'name' => 'Finance']);
+        $family = DB::table('job_families')->value('id');
+        $this->post('/organization/jobs', ['code' => 'J1', 'title' => 'Analyst', 'job_family_id' => $family,
+            'requirements' => [['type' => 'education', 'description' => 'S1 Akuntansi', 'is_mandatory' => 1]]]);
+        $job = DB::table('jobs_catalog')->first();
+        $this->put('/organization/jobs/'.$job->id, ['code' => 'J1', 'title' => 'Analyst', 'job_family_id' => $family,
+            'requirements' => [['type' => 'certification', 'description' => 'Sertifikasi Risiko'], ['type' => 'education', 'description' => 'S1 Akuntansi', 'is_mandatory' => 1]]]);
+
+        $row = DB::table('audit_logs')->where('auditable_type', 'job_requirements')->orderByDesc('id')->first();
+        $this->assertNotNull($row);
+        $this->assertStringContainsString('certification: Sertifikasi Risiko', json_decode($row->new_values, true)['persyaratan']);
+
+        $this->put('/workflow/definitions/employee_change_request', ['steps' => [
+            ['name' => 'Atasan', 'approver' => ['type' => 'supervisor', 'levels' => 1], 'sla_hours' => 24],
+        ]])->assertSessionHasNoErrors();
+        $flow = DB::table('audit_logs')->where('auditable_type', 'workflow_versions')->first();
+        $this->assertNotNull($flow);
+        $this->assertSame(2, (int) json_decode($flow->new_values, true)['versi']);
+    }
+
+    public function test_catatan_identitas_hanya_menyebut_kolom_yang_diisi(): void
+    {
+        $this->asTenant($this->tenant, function () {
+            $employee = DB::table('employees')->insertGetId(['tenant_id' => $this->tenant, 'uuid' => (string) Str::uuid7(), 'company_id' => DB::table('corporate')->value('id_corporate'),
+                'employee_number' => 'E2', 'full_name' => 'Y', 'employment_status' => 'pkwtt', 'join_date' => '2024-01-01', 'status' => 'active']);
+            EmployeeIdentity::save($employee, ['nik_ktp' => '3171010101900002', 'npwp' => '', 'bpjs_kesehatan' => '', 'bpjs_ketenagakerjaan' => '']);
+            EmployeeIdentity::save($employee, ['nik_ktp' => '', 'npwp' => '01.234.567.8-901.000', 'bpjs_kesehatan' => '', 'bpjs_ketenagakerjaan' => '']);
+        });
+
+        $notes = DB::table('audit_logs')->where('auditable_type', 'employee_identities')->orderBy('id')->pluck('description')->all();
+        $this->assertSame(['Identitas negara diperbarui: NIK KTP', 'Identitas negara diperbarui: NIK KTP (dikosongkan), NPWP'], $notes);
     }
 }

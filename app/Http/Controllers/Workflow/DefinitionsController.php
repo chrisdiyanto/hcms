@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Workflow;
 use App\Domain\Workflow\WorkflowRegistry;
 use App\Http\Controllers\Concerns\AuthorizesHcmsModule;
 use App\Http\Controllers\Controller;
+use App\Support\Audit\AuditLog;
 use App\Support\Security\Roles;
 use App\Support\Tenancy\TenantScope;
 use Illuminate\Http\Request;
@@ -81,7 +82,10 @@ class DefinitionsController extends Controller
         }, array_values($data['steps']));
 
         $definitionId = TenantScope::table('workflow_definitions')->where('code', $code)->value('id') ?? WorkflowRegistry::currentVersion($code)->definition_id;
-        WorkflowRegistry::saveVersion((int) $definitionId, $steps, (int) auth()->id());
+        $previous = WorkflowRegistry::currentVersion($code);
+        $versionId = WorkflowRegistry::saveVersion((int) $definitionId, $steps, (int) auth()->id());
+        AuditLog::updated('workflow_versions', $versionId, ['langkah' => $previous->steps, 'versi' => $previous->version],
+            ['langkah' => json_encode($steps), 'versi' => $previous->version + 1], 'Alur '.$code.' diperbarui');
         $this->logActivity($request, 'Alur '.$code.' diperbarui');
 
         return redirect('workflow/definitions')->with('message', 'Alur disimpan sebagai versi baru.')->with('status', 'success');

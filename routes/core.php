@@ -22,6 +22,12 @@ Route::get('core/tenants/{tenant}/break-glass', 'Core\TenantsController@breakGla
 Route::post('core/tenants/{tenant}/break-glass', 'Core\TenantsController@breakGlassStart')->middleware('throttle:5,1,break-glass');
 Route::post('core/break-glass/end', 'Core\TenantsController@breakGlassEnd');
 Route::get('core/audit', 'Core\AuditTrailController@index');
+// Migrasi data (impor CSV)
+Route::get('core/import', 'Core\DataImportController@index');
+Route::get('core/import/template/{type}', 'Core\DataImportController@template')->where('type', '[a-z_]+');
+Route::post('core/import', 'Core\DataImportController@upload')->middleware('throttle:20,1,import');
+Route::get('core/import/{uuid}', 'Core\DataImportController@show')->whereUuid('uuid');
+Route::post('core/import/{uuid}/commit', 'Core\DataImportController@commit')->whereUuid('uuid');
 /* End Tenants Routes */
 
 //-------------------------------------------------------------------------

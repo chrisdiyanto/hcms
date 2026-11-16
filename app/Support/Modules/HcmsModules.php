@@ -42,6 +42,10 @@ final class HcmsModules
             // Organization & Job Architecture
             'unit' => ['title' => 'Unit Organisasi', 'table' => 'unit', 'url' => 'unit', 'parent' => 'organisasi', 'icon' => 'fa fa-sitemap', 'title_id' => 'Unit Organisasi',
                 'access' => $hrManage + $orgRead, 'register_module' => false],
+            'unitcategory' => ['title' => 'Kategori Unit', 'table' => 'unit_category', 'url' => 'unitcategory', 'parent' => 'organisasi', 'icon' => 'fa fa-tags', 'title_id' => 'Kategori Unit',
+                'access' => $hrManage + $orgRead, 'register_module' => false],
+            'unittype' => ['title' => 'Tipe Unit', 'table' => 'unit_type', 'url' => 'unittype', 'parent' => 'organisasi', 'icon' => 'fa fa-shapes', 'title_id' => 'Tipe Unit',
+                'access' => $hrManage + $orgRead, 'register_module' => false],
             'jobfamilies' => ['title' => 'Job Family', 'table' => 'job_families', 'url' => 'organization/job-families', 'parent' => 'organisasi', 'icon' => 'fa fa-layer-group', 'title_id' => 'Rumpun Jabatan',
                 'access' => $hrManage + $orgRead],
             'joblevels' => ['title' => 'Job Level', 'table' => 'job_levels', 'url' => 'organization/job-levels', 'parent' => 'organisasi', 'icon' => 'fa fa-signal', 'title_id' => 'Level Jabatan',
@@ -65,6 +69,9 @@ final class HcmsModules
 
             'audittrail' => ['title' => 'Audit Trail', 'table' => 'audit_logs', 'url' => 'core/audit', 'parent' => 'Control Panel', 'icon' => 'fa fa-history', 'title_id' => 'Jejak Audit',
                 'access' => [Roles::SUPER_ADMIN => self::READ, Roles::TENANT_ADMIN => self::READ, Roles::AUDITOR => self::READ, Roles::DPO => self::READ]],
+
+            'dataimport' => ['title' => 'Migrasi Data', 'table' => 'import_batches', 'url' => 'core/import', 'parent' => 'Control Panel', 'icon' => 'fa fa-file-import', 'title_id' => 'Migrasi Data',
+                'access' => [Roles::SUPER_ADMIN => self::FULL, Roles::TENANT_ADMIN => self::FULL, Roles::HR_ADMIN => self::FULL]],
 
             // Employee Management — isi daftar tetap dibatasi data scope tiap peran
             'employees' => ['title' => 'Pegawai', 'table' => 'employees', 'url' => 'employees', 'parent' => 'kepegawaian', 'icon' => 'fa fa-id-card', 'title_id' => 'Pegawai',

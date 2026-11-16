@@ -1,6 +1,6 @@
 {{-- Tampil selama Super Administrator berada dalam sesi break-glass --}}
 <div class="alert alert-danger d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3" role="alert"
-	x-data="{ left: {{ max(0, \Illuminate\Support\Carbon::parse($breakGlass->expires_at)->diffInSeconds(now(), true)) }},
+	x-data="{ left: {{ max(0, (int) floor(now()->diffInSeconds(\Illuminate\Support\Carbon::parse($breakGlass->expires_at), false))) }},
 		get label() { const m = Math.floor(this.left / 60), s = this.left % 60; return `${m}:${String(s).padStart(2, '0')}` } }"
 	x-init="setInterval(() => { if (left > 0) left--; else location.reload() }, 1000)">
 	<div>

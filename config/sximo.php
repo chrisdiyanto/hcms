@@ -9,7 +9,7 @@ return [
 'cnf_group' => '3',
 'cnf_activation' => 'manual',
 'cnf_multilang' => '0',
-'cnf_lang' => 'en',
+'cnf_lang' => 'id',
 'cnf_regist' => 'true',
 'cnf_front' => 'false',
 'cnf_recaptcha' => 'false',

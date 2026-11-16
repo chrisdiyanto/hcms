@@ -107,7 +107,8 @@ final class AssignEmployee
             $fail('position_id', 'Posisi sedang dibekukan atau ditutup.');
         }
         if ($from < $position->effective_from || ($position->effective_to && $from > $position->effective_to)) {
-            $fail('effective_from', 'Posisi tidak berlaku pada tanggal mulai tersebut.');
+            $fail('effective_from', 'Posisi '.$position->code.' berlaku '.$position->effective_from.' s.d. '.($position->effective_to ?? 'sekarang')
+                .'; tanggal mulai penugasan '.$from.' di luar rentang itu. Pada impor, isi kolom assignment_from dengan tanggal di dalam rentang tersebut.');
         }
 
         $overlapping = fn ($q) => $q->where('effective_from', '<=', $to ?? '9999-12-31')

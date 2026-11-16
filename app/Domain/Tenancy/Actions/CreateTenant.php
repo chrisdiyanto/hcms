@@ -65,10 +65,37 @@ final class CreateTenant
                     'user_id' => $userId,
                     'group_id' => self::tenantAdminGroupId(),
                 ]);
+
+                // Kategori & tipe unit wajib ada sebelum unit pertama bisa dibuat
+                self::seedUnitReferences((int) TenantScope::tenantId());
             });
 
             return $model;
         });
+    }
+
+    /** Kategori unit (blueprint 5.2: tipe unit dikonfigurasi per organisasi) & tipe unit default. */
+    public const UNIT_CATEGORIES = ['DIR' => 'Direktorat', 'DIV' => 'Divisi', 'DEP' => 'Departemen', 'SEK' => 'Seksi', 'UNT' => 'Unit'];
+
+    public const UNIT_TYPES = ['Struktural', 'Fungsional'];
+
+    /** Isi kategori & tipe unit default bila tenant belum punya. Aman dijalankan berulang. */
+    public static function seedUnitReferences(int $tenantId): void
+    {
+        if (! DB::table('unit_category')->where('tenant_id', $tenantId)->exists()) {
+            foreach (self::UNIT_CATEGORIES as $code => $name) {
+                DB::table('unit_category')->insert([
+                    'tenant_id' => $tenantId, 'unit_category_code' => $code, 'unit_category' => $name,
+                    'slug_unit_category' => Str::slug($name).'-'.$tenantId, 'unit_category_explan' => '',
+                ]);
+            }
+        }
+
+        if (! DB::table('unit_type')->where('tenant_id', $tenantId)->exists()) {
+            foreach (self::UNIT_TYPES as $name) {
+                DB::table('unit_type')->insert(['tenant_id' => $tenantId, 'unit_type' => $name, 'keterangan' => '', 'status' => 1]);
+            }
+        }
     }
 
     public static function tenantAdminGroupId(): int

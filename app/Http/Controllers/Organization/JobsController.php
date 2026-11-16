@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Organization;
 
+use App\Support\Audit\AuditLog;
 use App\Support\Tenancy\TenantScope;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
@@ -102,7 +103,10 @@ class JobsController extends MasterDataController
 
     protected function afterSave(Request $request, int $id, ?object $before): void
     {
-        // Persyaratan disimpan ulang utuh sesuai urutan di form
+        // Persyaratan disimpan ulang utuh sesuai urutan di form; perubahan dicatat di audit
+        $snapshot = fn () => TenantScope::table('job_requirements')->where('job_id', $id)->orderBy('sort_order')->get(['type', 'description', 'is_mandatory'])
+            ->map(fn ($r) => $r->type.': '.$r->description.($r->is_mandatory ? ' (wajib)' : ''))->all();
+        $beforeRequirements = $snapshot();
         TenantScope::table('job_requirements')->where('job_id', $id)->delete();
         foreach (array_values((array) $request->input('requirements', [])) as $i => $req) {
             DB::table('job_requirements')->insert(TenantScope::fillForInsert('job_requirements', [
@@ -114,6 +118,11 @@ class JobsController extends MasterDataController
                 'created_at' => now(),
                 'updated_at' => now(),
             ]));
+        }
+
+        $afterRequirements = $snapshot();
+        if ($beforeRequirements !== $afterRequirements) {
+            AuditLog::updated('job_requirements', $id, ['persyaratan' => implode(' | ', $beforeRequirements)], ['persyaratan' => implode(' | ', $afterRequirements)], 'Persyaratan job #'.$id);
         }
     }
 

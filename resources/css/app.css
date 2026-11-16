@@ -2,3 +2,36 @@
 
 /* Sembunyikan elemen Alpine sampai komponen siap */
 [x-cloak] { display: none !important; }
+
+/*
+ * Checkbox Bootstrap di halaman HCMS (.form-check > .form-check-input).
+ * Tema Sximo (style.css, gaya Materialize) menyembunyikan SEMUA checkbox
+ * (left: -9999px) dan menggambar ulang kotaknya di label::before/::after,
+ * sehingga tanda centang menimpa teks label. Kembalikan checkbox asli Bootstrap
+ * hanya untuk pola .form-check; checkbox gaya lama Sximo tidak tersentuh.
+ */
+.form-check > [type="checkbox"].form-check-input,
+.form-check > [type="checkbox"].form-check-input:checked,
+.form-check > [type="checkbox"].form-check-input:not(:checked) {
+    position: static;
+    left: auto;
+    opacity: 1;
+    float: left;
+    margin-left: -1.5em;
+    pointer-events: auto;
+}
+
+.form-check > [type="checkbox"].form-check-input + label {
+    position: static;
+    padding-left: 0;
+    height: auto;
+    line-height: inherit;
+    font-size: inherit;
+    display: inline;
+}
+
+.form-check > [type="checkbox"].form-check-input + label::before,
+.form-check > [type="checkbox"].form-check-input + label::after {
+    content: none;
+    display: none;
+}
