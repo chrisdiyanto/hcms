@@ -222,6 +222,18 @@ class WorkflowTest extends TestCase
         $this->as('staff')->get('/workflow/definitions')->assertRedirect('dashboard');
     }
 
+    public function test_tanpa_approver_pengajuan_ditolak_dengan_pesan_dan_tidak_tersimpan(): void
+    {
+        // Tidak ada HR Admin maupun Tenant Admin aktif di tenant
+        DB::table('tb_users')->whereIn('id', [$this->users['hr']->id, $this->users['admin']->id])->update(['active' => 0]);
+
+        $this->as('staff')->post('/ess/change-requests', ['phone' => '0899', 'reason' => 'Ganti nomor'])
+            ->assertSessionHasErrors('workflow');
+
+        $this->assertSame(0, DB::table('employee_change_requests')->count());
+        $this->assertSame(0, DB::table('workflow_instances')->count());
+        $this->get('/ess/profile')->assertOk()->assertSee('Tidak ada approver');
+    }
     public function test_batal_oleh_pengaju_dan_satu_pengajuan_aktif(): void
     {
         $this->submitEss();
