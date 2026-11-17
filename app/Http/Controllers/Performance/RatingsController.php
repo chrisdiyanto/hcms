@@ -46,8 +46,9 @@ class RatingsController extends Controller
         $ratings = TenantScope::table('performance_ratings')->join('employees', 'employees.id', '=', 'performance_ratings.employee_id')
             ->where('performance_ratings.period_id', $row->id)->where('performance_ratings.is_current', true)
             ->whereIn('performance_ratings.employee_id', EmployeeScope::query()->select('employees.id'))
-            ->orderByDesc('performance_ratings.final_score')
-            ->get(['performance_ratings.*', 'employees.full_name', 'employees.employee_number']);
+            ->orderByDesc('performance_ratings.final_score')->orderBy('performance_ratings.id')
+            ->select(['performance_ratings.*', 'employees.full_name', 'employees.employee_number'])
+            ->paginate(50)->withQueryString();
 
         return view('performance.ratings.period', [
             'pageTitle' => 'Rating Kinerja: '.$row->name, 'pageNote' => PerformancePeriods::STATUS[$row->status],

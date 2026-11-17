@@ -36,12 +36,12 @@ Legenda: ✅ terpenuhi & teruji otomatis · 🟡 terpenuhi, bukti sebagian/manua
 | `composer audit` / `npm audit` | ✅ | 2026-11-17: tidak ada kerentanan (juga dijalankan di CI) |
 | Review konfigurasi Octane (state bocor antar-request) | ✅ | Cache statis hanya metadata skema & kode peran global; `TenantContext` di-bind `scoped` dan dibersihkan middleware saat terminate; hak akses modul tidak di-cache per instance controller. Setelah deploy migrasi jalankan `php artisan octane:reload` |
 | Hak subjek data (akses & koreksi) | ✅ | Akses: Profil Saya › Unduh data saya (JSON, tercatat) — `DataSubjectAccessTest`. Koreksi: ESS change request — `WorkflowTest::test_ess_disetujui_hr_dan_perubahan_diterapkan_dengan_jejak` |
-| Pentest independen | ⏳ | Pihak ketiga, menjelang pilot |
-| Uji beban 10.000 pegawai / 1.000 pengguna, p95 < 1 detik | ⏳ | Gelombang 2 |
+| Pentest independen | ⏳ | Diputuskan 2026-11-17: dilakukan pihak ketiga setelah seluruh pengembangan Fase 4 selesai, sebelum pilot |
+| Uji beban 10.000 pegawai / 1.000 pengguna, p95 < 1 detik | 🟡 | Latensi server: 20/20 halaman p95 < 1 dtk pada 10.000 pegawai (`docs/LOAD-TEST.md`). 1.000 pengguna bersamaan: skrip k6 siap, dijalankan di staging (Octane + OPcache) |
 | 2× dry run migrasi + rekonsiliasi | ⏳ | `hcms:import` siap (validasi kering, rekonsiliasi); dijalankan dengan data klien pilot |
 | UAT, pelatihan, pilot satu company, stabilisasi | ⏳ | Gelombang 3 (skrip UAT & materi pelatihan) |
 
 ## Catatan
 
-- Zona waktu aplikasi masih `UTC` (bawaan master); untuk pilot di Indonesia perlu diputuskan `Asia/Jakarta` sebelum data produksi masuk.
-- Rekomendasi: kunci `cnf_maps`, `ai_api_key`, dan `cnf_recaptchaprivatekey` yang pernah tersimpan di repo lokal sebaiknya dirotasi sebelum pilot.
+- Zona waktu: diputuskan 2026-11-17 `Asia/Jakarta` (`APP_TIMEZONE`, sesi database `DB_TIMEZONE=+07:00`). Data dev yang dibuat sebelum perubahan tersimpan dalam jam UTC (tertinggal 7 jam); tidak ada data produksi yang terdampak.
+- Rotasi kunci (diputuskan 2026-11-17): Google Maps (`MAPS_API_KEY`), Gemini (`AI_API_KEY`), dan reCAPTCHA (`RECAPTCHA_PRIVATE_KEY`) dirotasi oleh pemilik akun di konsol Google; nilai baru hanya disimpan di `.env` (atau lewat Control Panel › Config) dan kunci lama dinonaktifkan.

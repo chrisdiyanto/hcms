@@ -54,6 +54,8 @@ return [
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
+            // Sesi DB mengikuti zona waktu aplikasi (WIB, tanpa DST) agar CURRENT_TIMESTAMP konsisten dengan now()
+            'timezone' => env('DB_TIMEZONE', '+07:00'),
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => false,

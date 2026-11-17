@@ -51,6 +51,7 @@
 			<h5 class="card-title">Heatmap gap unit × kompetensi</h5>
 			<p class="small text-muted">Rata-rata (aktual − wajib) per unit; negatif = di bawah standar posisi. Arahkan kursor untuk jumlah pegawai.</p>
 			@if($heatmap)
+				@if($heatmap['truncated'])<p class="small text-warning mb-1">Ditampilkan {{ count($heatmap['rows']) }} unit dengan rata-rata gap terburuk; pilih unit di filter untuk rincian.</p>@endif
 				<div data-chart="{{ json_encode($heatmap) }}" style="height:{{ $heatmap['height'] }}px"></div>
 			@else
 				<p class="text-muted small mb-0">Belum ada data gap.</p>
@@ -76,6 +77,7 @@
 				@endforelse
 				</tbody>
 			</table></div>
+			<div class="mt-2">{{ $fits->links('pagination::bootstrap-5') }}</div>
 			<div class="small text-muted mt-1">* belum lengkap: ada kompetensi wajib yang belum dinilai (dihitung 0).</div>
 		</div></div>
 	</div>

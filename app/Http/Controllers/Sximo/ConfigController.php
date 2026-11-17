@@ -571,6 +571,14 @@ class ConfigController extends Controller {
         if (function_exists('opcache_invalidate')) {
             @opcache_invalidate($filename, true);
         }
+        // Config ter-cache (produksi) tidak membaca .env/config baru sampai cache dihapus
+        if (app()->configurationIsCached()) {
+            try {
+                Artisan::call('config:clear');
+            } catch (\Throwable $e) {
+                Log::error('Failed to clear config cache: ' . $e->getMessage());
+            }
+        }
         config(['ai' => $merged]);
     }
 
@@ -730,7 +738,7 @@ class ConfigController extends Controller {
 
     private function getPythonBinary()
     {
-        $custom = env('PYTHON_BINARY');
+        $custom = config('services.python.binary');
         if ($custom && file_exists($custom)) {
             return $custom;
         }

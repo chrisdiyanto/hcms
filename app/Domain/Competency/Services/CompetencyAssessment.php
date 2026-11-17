@@ -7,6 +7,7 @@ use App\Domain\Workflow\Services\Notifier;
 use App\Support\Audit\AuditLog;
 use App\Support\Tenancy\TenantScope;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -322,10 +323,22 @@ final class CompetencyAssessment
      *
      * @return array{jfi: float, band: string, complete: bool, items: array}
      */
+    /** Versi cache agregat Laporan Kompetensi per tenant; naik setiap gap/JFI dihitung ulang. */
+    public static function reportVersion(): int
+    {
+        return (int) Cache::get('competency-report-version:'.TenantScope::tenantId(), 0);
+    }
+
+    public static function bumpReportVersion(): void
+    {
+        Cache::forever('competency-report-version:'.TenantScope::tenantId(), self::reportVersion() + 1);
+    }
+
     public function refreshFit(int $employeeId, int $positionId, ?int $assessmentId = null): array
     {
         $fit = $this->fitFor($employeeId, $positionId);
         $now = now();
+        self::bumpReportVersion();
 
         TenantScope::table('competency_gaps')->where('employee_id', $employeeId)->where('position_id', $positionId)->delete();
         foreach ($fit['items'] as $item) {

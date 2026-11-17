@@ -61,4 +61,9 @@ return [
         'redirect' => 'https://mangopik.com/sximodemo7/user/autosocialize/facebook',
     ],  
 
+    // Interpreter Python untuk fitur RAG/AI (dibaca lewat config agar aman saat config di-cache)
+    'python' => [
+        'binary' => env('PYTHON_BINARY'),
+    ],
+
 ];

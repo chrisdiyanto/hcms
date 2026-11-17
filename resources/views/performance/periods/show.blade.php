@@ -120,7 +120,15 @@
 		</div></div>
 
 		<div class="card"><div class="card-body">
-			<h5 class="card-title">Rencana kinerja pegawai</h5>
+			<h5 class="card-title" id="rencana">Rencana kinerja pegawai</h5>
+			<form method="GET" action="{{ url('performance/periods/'.$period->id) }}#rencana" class="d-flex flex-wrap gap-2 mb-2">
+				<input name="q" value="{{ $q }}" maxlength="100" class="form-control form-control-sm" style="max-width:220px" placeholder="Nama / NIP" aria-label="Cari pegawai">
+				<select name="plan_status" class="form-select form-select-sm" style="max-width:220px" aria-label="Filter status rencana">
+					<option value="">Semua status</option>
+					@foreach($planStatuses + ['none' => 'Belum dibuat'] as $k => $l)<option value="{{ $k }}" @selected($planStatus === $k)>{{ $l }} ({{ $planCounts[$k] ?? 0 }})</option>@endforeach
+				</select>
+				<button class="btn btn-sm btn-outline-primary" type="submit">Terapkan</button>
+			</form>
 			<div class="table-responsive"><table class="table table-sm align-middle mb-0">
 				<thead><tr><th>Pegawai</th><th>Posisi</th><th>Status</th><th>Diajukan</th></tr></thead>
 				<tbody>
@@ -132,10 +140,11 @@
 							@if($p->status === 'approved' && !in_array($period->status, ['draft', 'planning']))<a href="{{ url('performance/plans/'.$p->plan_id.'/monitoring') }}" class="ms-1">monitoring</a>@endif
 							@if($p->status === 'approved' && in_array($period->status, ['assessment', 'calibration', 'appeal', 'closed']))<a href="{{ url('performance/assessments/'.$p->plan_id) }}" class="ms-1">penilaian</a>@endif</td></tr>
 				@empty
-					<tr><td colspan="4" class="text-muted">Tidak ada pegawai dalam cakupan data Anda.</td></tr>
+					<tr><td colspan="4" class="text-muted">Tidak ada pegawai yang cocok dalam cakupan data Anda.</td></tr>
 				@endforelse
 				</tbody>
 			</table></div>
+			<div class="mt-2">{{ $plans->fragment('rencana')->links('pagination::bootstrap-5') }}</div>
 		</div></div>
 	</div>
 </div>

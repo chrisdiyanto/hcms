@@ -76,14 +76,22 @@ class PeriodsController extends Controller
             ->get(['strategic_objectives.*', 'unit.unit_name']);
 
         // Rekap rencana pegawai aktif dalam cakupan data (satu baris per rencana)
-        $plans = EmployeeScope::query()->where('employees.status', 'active')
+        // Rekap dihitung di SQL; daftar dipaginasi & bisa difilter status/nama (uji beban: 10.000 baris dalam satu halaman)
+        $base = fn () => EmployeeScope::query()->where('employees.status', 'active')
             ->leftJoin('performance_plans', function ($j) use ($row) {
                 $j->on('performance_plans.employee_id', '=', 'employees.id')->where('performance_plans.period_id', $row->id);
-            })
-            ->leftJoin('positions', 'positions.id', '=', 'performance_plans.position_id')
+            });
+        $planCounts = $base()->selectRaw("COALESCE(performance_plans.status, 'none') as st, COUNT(*) as n")->groupBy('st')->pluck('n', 'st')->map(fn ($n) => (int) $n);
+        $status = (string) request('plan_status');
+        $q = trim((string) request('q'));
+        $plans = $base()->leftJoin('positions', 'positions.id', '=', 'performance_plans.position_id')
+            ->when($status === 'none', fn ($w) => $w->whereNull('performance_plans.id'))
+            ->when(array_key_exists($status, PerformancePlans::STATUS), fn ($w) => $w->where('performance_plans.status', $status))
+            ->when($q !== '', fn ($w) => $w->where(fn ($s) => $s->where('employees.full_name', 'like', '%'.$q.'%')->orWhere('employees.employee_number', $q)))
             ->orderBy('employees.full_name')
-            ->get(['employees.id as employee_id', 'employees.full_name', 'employees.employee_number', 'performance_plans.id as plan_id',
-                'performance_plans.status', 'performance_plans.submitted_at', 'positions.title as position_title']);
+            ->select(['employees.id as employee_id', 'employees.full_name', 'employees.employee_number', 'performance_plans.id as plan_id',
+                'performance_plans.status', 'performance_plans.submitted_at', 'positions.title as position_title'])
+            ->paginate(50)->withQueryString();
 
         return view('performance.periods.show', [
             'pageTitle' => $row->name,
@@ -92,7 +100,7 @@ class PeriodsController extends Controller
             'objectives' => $objectives,
             'tree' => $this->tree($objectives),
             'plans' => $plans,
-            'planCounts' => $plans->groupBy(fn ($p) => $p->status ?? 'none')->map->count(),
+            'planCounts' => $planCounts, 'planStatus' => $status, 'q' => $q,
             'units' => TenantScope::table('unit')->orderBy('unit_name')->pluck('unit_name', 'id_unit')->all(),
             'levels' => self::LEVELS, 'statuses' => PerformancePeriods::STATUS, 'planStatuses' => PerformancePlans::STATUS,
             'dimensions' => PerformancePolicy::DIMENSIONS,

@@ -41,6 +41,22 @@ final class EmployeeScope
         });
     }
 
+    /**
+     * Batasi query lain (yang punya kolom pegawai) ke cakupan data pengguna.
+     * Cakupan "all" tidak menambah subquery (uji beban: IN-subquery + EXISTS membuat
+     * optimizer MariaDB memilih rencana 4× lebih lambat pada 10.000 pegawai);
+     * cakupan lain memakai daftar pegawai dari query().
+     */
+    public static function apply($query, string $employeeColumn, ?DataScope $scope = null)
+    {
+        $scope ??= DataScope::current();
+        if ($scope->isAll()) {
+            return $query;
+        }
+
+        return $query->whereIn($employeeColumn, self::query($scope)->select('employees.id'));
+    }
+
     public static function canSee(int $employeeId, ?DataScope $scope = null): bool
     {
         return self::query($scope)->where('employees.id', $employeeId)->exists();

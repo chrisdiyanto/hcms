@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Benchmark halaman (Fase 4 uji beban). TIDAK ikut CI / suite default.
+  Siapkan data dulu:
+    DB_DATABASE=hcms_load php artisan migrate (opsi force)
+    DB_DATABASE=hcms_load php artisan db:seed dengan kelas TestCoreSeeder (opsi force)
+    DB_DATABASE=hcms_load php artisan hcms:load-seed (employees=10000, users=1000)
+  Jalankan:
+    php vendor/bin/phpunit dengan konfigurasi phpunit.benchmark.xml
+  Hasil: storage/app/benchmark/latest.md
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true">
+    <testsuites>
+        <testsuite name="Benchmark">
+            <directory suffix="Test.php">./tests/Benchmark</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <server name="APP_ENV" value="testing"/>
+        <server name="APP_DEBUG" value="false"/>
+        <!-- Database uji beban terpisah; data TIDAK di-reset -->
+        <server name="DB_DATABASE" value="hcms_load"/>
+        <server name="CACHE_DRIVER" value="array"/>
+        <server name="MAIL_DRIVER" value="array"/>
+        <server name="QUEUE_CONNECTION" value="sync"/>
+        <server name="SESSION_DRIVER" value="array"/>
+        <server name="BENCH_ITERATIONS" value="15"/>
+    </php>
+</phpunit>

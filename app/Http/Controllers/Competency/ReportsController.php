@@ -8,9 +8,12 @@ use App\Domain\Employee\Services\EmployeeScope;
 use App\Http\Controllers\Concerns\AuthorizesHcmsModule;
 use App\Http\Controllers\Controller;
 use App\Support\Audit\AuditLog;
+use App\Support\Security\DataScope;
 use App\Support\Tenancy\TenantScope;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Laporan kompetensi (blueprint 7.5): sebaran kesiapan (band JFI), gap terbesar,
@@ -22,6 +25,8 @@ class ReportsController extends Controller
     use AuthorizesHcmsModule;
 
     private const HEATMAP_COLUMNS = 15;
+
+    private const HEATMAP_ROWS = 25;
 
     public function __construct(private CompetencyAssessment $assessments)
     {
@@ -39,39 +44,65 @@ class ReportsController extends Controller
         $unitId = $request->integer('unit') ?: null;
         $band = array_key_exists((string) $request->query('band'), JobFitCalculator::BAND_LABELS) ? $request->query('band') : null;
 
+        // Agregat di-cache per tenant + cakupan data + filter; versi naik setiap gap/JFI dihitung ulang
+        // (uji beban 10.000 pegawai: agregasi 25.000 gap ± 1 dtk tanpa cache)
+        $scope = DataScope::current();
+        $key = 'competency-report:'.TenantScope::tenantId().':v'.CompetencyAssessment::reportVersion().':'
+            .($scope->isAll() ? 'all' : md5($scope->mode.'|'.$scope->userId.'|'.implode(',', $scope->unitIds))).':u'.($unitId ?? 0);
+        $agg = Cache::remember($key, 600, fn () => $this->aggregates($unitId));
+
         $fits = $this->current('job_fit_results', $unitId)
             ->join('employees', 'employees.id', '=', 'job_fit_results.employee_id')
             ->leftJoin('unit', 'unit.id_unit', '=', 'positions.unit_id')
-            ->orderBy('job_fit_results.jfi', 'desc')
-            ->get(['job_fit_results.*', 'employees.full_name', 'employees.employee_number', 'positions.title as position_title', 'unit.unit_name']);
-
-        $bandCounts = collect(JobFitCalculator::BAND_LABELS)->map(fn ($l, $k) => $fits->where('band', $k)->count());
-
-        $gaps = $this->current('competency_gaps', $unitId)
-            ->join('competencies', 'competencies.id', '=', 'competency_gaps.competency_id')
-            ->leftJoin('unit', 'unit.id_unit', '=', 'positions.unit_id')
-            ->get(['competency_gaps.competency_code', 'competency_gaps.gap', 'competency_gaps.criticality', 'competencies.name', 'unit.unit_name']);
-
-        $topGaps = $gaps->groupBy('competency_code')->map(fn ($g, $code) => (object) [
-            'code' => $code, 'name' => $g->first()->name, 'employees' => $g->count(),
-            'below' => $g->where('gap', '<', 0)->count(), 'avg_gap' => round((float) $g->avg('gap'), 2),
-            'critical' => $g->where('criticality', 3)->where('gap', '<', 0)->count(),
-        ])->sortBy([['below', 'desc'], ['avg_gap', 'asc']])->values();
+            ->when($band, fn ($q) => $q->where('job_fit_results.band', $band))
+            ->orderByDesc('job_fit_results.jfi')->orderBy('job_fit_results.id')
+            ->select(['job_fit_results.*', 'employees.full_name', 'employees.employee_number', 'positions.title as position_title', 'unit.unit_name'])
+            ->paginate(50)->withQueryString();
 
         return view('competency.reports.index', [
             'pageTitle' => 'Laporan Kompetensi',
             'pageNote' => 'kesiapan, gap & heatmap',
-            'units' => $this->unitOptions(),
+            'units' => $agg['units'],
             'unitId' => $unitId, 'band' => $band,
-            'fits' => $band ? $fits->where('band', $band)->values() : $fits,
-            'bandCounts' => $bandCounts, 'bands' => JobFitCalculator::BAND_LABELS,
-            'topGaps' => $topGaps->take(10),
+            'fits' => $fits,
+            'bandCounts' => $agg['bandCounts'], 'bands' => JobFitCalculator::BAND_LABELS,
+            'topGaps' => $agg['topGaps']->take(10),
             'barChart' => [
                 'type' => 'bar', 'labels' => array_values(JobFitCalculator::BAND_LABELS),
-                'values' => $bandCounts->values()->all(), 'colors' => ['#12b76a', '#f79009', '#d92d20'],
+                'values' => $agg['bandCounts']->values()->all(), 'colors' => ['#12b76a', '#f79009', '#d92d20'],
             ],
-            'heatmap' => $this->heatmap($gaps, $topGaps),
+            'heatmap' => $agg['heatmap'],
         ]);
+    }
+
+    /** @return array{bandCounts: Collection, topGaps: Collection, heatmap: ?array, units: array} */
+    private function aggregates(?int $unitId): array
+    {
+        $counted = $this->current('job_fit_results', $unitId)->selectRaw('job_fit_results.band, COUNT(*) n')->groupBy('job_fit_results.band')->pluck('n', 'band');
+        $bandCounts = collect(JobFitCalculator::BAND_LABELS)->map(fn ($l, $k) => (int) ($counted[$k] ?? 0));
+
+        $topGaps = $this->current('competency_gaps', $unitId)
+            ->join('competencies', 'competencies.id', '=', 'competency_gaps.competency_id')
+            ->groupBy('competency_gaps.competency_code')
+            ->selectRaw('competency_gaps.competency_code as code, MAX(competencies.name) as name, COUNT(*) as employees,
+                SUM(competency_gaps.gap < 0) as below, ROUND(AVG(competency_gaps.gap), 2) as avg_gap,
+                SUM(competency_gaps.criticality = 3 AND competency_gaps.gap < 0) as critical')
+            ->orderByDesc('below')->orderBy('avg_gap')->limit(self::HEATMAP_COLUMNS)->get()
+            ->map(function ($g) {
+                foreach (['employees', 'below', 'critical'] as $k) {
+                    $g->{$k} = (int) $g->{$k};
+                }
+                $g->avg_gap = (float) $g->avg_gap;
+
+                return $g;
+            });
+
+        return [
+            'bandCounts' => $bandCounts,
+            'topGaps' => $topGaps,
+            'heatmap' => $this->heatmap($unitId, $topGaps->pluck('code')->all()),
+            'units' => $this->unitOptions(),
+        ];
     }
 
     public function employee(int $employee)
@@ -121,40 +152,46 @@ class ReportsController extends Controller
     {
         $today = now()->toDateString();
 
-        return TenantScope::table($table)
+        // JOIN (bukan EXISTS + IN): satu penugasan primer aktif per pegawai, jadi tidak menggandakan baris
+        $query = TenantScope::table($table)
             ->join('positions', 'positions.id', '=', $table.'.position_id')
-            ->whereIn($table.'.employee_id', EmployeeScope::query()->where('employees.status', 'active')->select('employees.id'))
-            ->whereExists(function ($q) use ($table, $today) {
-                $q->selectRaw('1')->from('employee_assignments')
-                    ->whereColumn('employee_assignments.employee_id', $table.'.employee_id')
-                    ->whereColumn('employee_assignments.position_id', $table.'.position_id')
-                    ->where('employee_assignments.type', 'primary')
-                    ->where('employee_assignments.effective_from', '<=', $today)
-                    ->where(fn ($w) => $w->whereNull('employee_assignments.effective_to')->orWhere('employee_assignments.effective_to', '>=', $today));
+            ->join('employee_assignments as cur_a', function ($j) use ($table, $today) {
+                $j->on('cur_a.employee_id', '=', $table.'.employee_id')->on('cur_a.position_id', '=', $table.'.position_id')
+                    ->where('cur_a.type', 'primary')->where('cur_a.effective_from', '<=', $today)
+                    ->where(fn ($w) => $w->whereNull('cur_a.effective_to')->orWhere('cur_a.effective_to', '>=', $today));
+            })
+            ->join('employees as cur_e', function ($j) use ($table) {
+                $j->on('cur_e.id', '=', $table.'.employee_id')->whereNull('cur_e.deleted_at')->where('cur_e.status', 'active');
             })
             ->when($unitId, fn ($q) => $q->where('positions.unit_id', $unitId));
+
+        return EmployeeScope::apply($query, $table.'.employee_id');
     }
 
-    private function heatmap($gaps, $topGaps): ?array
+    /** Rata-rata gap unit × kompetensi (agregasi SQL); baris dibatasi unit dengan gap rata-rata terburuk. */
+    private function heatmap(?int $unitId, array $codes): ?array
     {
-        $cols = $topGaps->take(self::HEATMAP_COLUMNS)->pluck('code')->values();
-        $byUnit = $gaps->whereIn('competency_code', $cols)->groupBy(fn ($g) => $g->unit_name ?: 'Tanpa unit')->sortKeys();
-        if ($cols->isEmpty() || $byUnit->isEmpty()) {
+        if ($codes === []) {
+            return null;
+        }
+        $cells = $this->current('competency_gaps', $unitId)
+            ->leftJoin('unit', 'unit.id_unit', '=', 'positions.unit_id')
+            ->whereIn('competency_gaps.competency_code', $codes)
+            ->groupBy('unit.unit_name', 'competency_gaps.competency_code')
+            ->selectRaw("COALESCE(unit.unit_name, 'Tanpa unit') as unit_name, competency_gaps.competency_code as code, AVG(competency_gaps.gap) as avg_gap, COUNT(*) as n")
+            ->get();
+        if ($cells->isEmpty()) {
             return null;
         }
 
-        $rows = $byUnit->keys()->values();
-        $data = [];
-        foreach ($rows as $y => $unit) {
-            foreach ($cols as $x => $code) {
-                $cell = $byUnit[$unit]->where('competency_code', $code);
-                if ($cell->isNotEmpty()) {
-                    $data[] = [$x, $y, round((float) $cell->avg('gap'), 2), $cell->count()];
-                }
-            }
-        }
+        $rows = $cells->groupBy('unit_name')->map(fn ($c) => $c->avg('avg_gap'))->sort()->take(self::HEATMAP_ROWS)->keys()->sort()->values();
+        $x = array_flip($codes);
+        $y = $rows->flip();
+        $data = $cells->filter(fn ($c) => $y->has($c->unit_name))
+            ->map(fn ($c) => [$x[$c->code], $y[$c->unit_name], round((float) $c->avg_gap, 2), (int) $c->n])->values()->all();
 
-        return ['type' => 'heatmap', 'cols' => $cols->all(), 'rows' => $rows->all(), 'data' => $data, 'height' => max(220, 46 * $rows->count() + 110)];
+        return ['type' => 'heatmap', 'cols' => $codes, 'rows' => $rows->all(), 'data' => $data, 'height' => max(220, 46 * $rows->count() + 110),
+            'truncated' => $cells->pluck('unit_name')->unique()->count() > self::HEATMAP_ROWS];
     }
 
     private function unitOptions(): array

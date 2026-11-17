@@ -55,7 +55,7 @@
 			</tbody>
 		</table>
 	</div>
-	<div class="mt-3">{{ $logs->links('pagination::bootstrap-5') }}</div>
+	<div class="mt-3">{{ $logs->links('pagination::simple-bootstrap-5') }}</div>
 </div></div>
 
 <div class="card"><div class="card-body">

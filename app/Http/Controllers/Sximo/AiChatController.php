@@ -885,7 +885,7 @@ class AiChatController extends Controller {
         try {
             if ($name === 'get_database_schema') {
                 $tables = DB::select('SHOW TABLES');
-                $dbName = env('DB_DATABASE', 'database');
+                $dbName = DB::connection()->getDatabaseName(); // aman saat config di-cache (env() bernilai null)
                 $keyName = 'Tables_in_' . $dbName;
                 
                 $schemaInfo = [];

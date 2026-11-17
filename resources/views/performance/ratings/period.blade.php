@@ -31,6 +31,7 @@
 		@endforelse
 		</tbody>
 	</table></div>
+	<div class="mt-2">{{ $ratings->links('pagination::bootstrap-5') }}</div>
 	@if($period->status === 'appeal')<div class="alert alert-warning small mt-2 mb-1">Rating masih sementara. Keberatan dapat diajukan s.d. {{ $period->appeal_closes_on }}; pengesahan final (dengan snapshot) setelah tanggal tersebut dan semua keberatan diputus.</div>@endif
 	<div class="small text-muted mt-2">Snapshot (dibuat saat pengesahan final) menyimpan kebijakan terkunci, KPI (termasuk versi lama), realisasi, penilaian, dan kalibrasi; tidak dapat diubah atau dihapus (dijaga trigger database).</div>
 </div></div>
