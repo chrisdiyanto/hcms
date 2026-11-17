@@ -170,8 +170,10 @@ class AssessmentsController extends Controller
         $this->logActivity($request, 'Menutup asesmen kompetensi #'.$row->id);
 
         return redirect('competency/assessments/'.$row->id)
-            ->with('message', sprintf('Asesmen ditutup. JFI %s%% — %s%s.', number_format($result['jfi'], 1, ',', '.'),
-                JobFitCalculator::BAND_LABELS[$result['band']], $result['complete'] ? '' : ' (belum lengkap)'))
+            ->with('message', $result['jfi'] === null
+                ? sprintf('Asesmen ditutup. JFI belum dihitung: skor berlaku baru mencakup %s%% bobot profil (minimal %d%%).', number_format($result['coverage'], 0, ',', '.'), JobFitCalculator::MIN_COVERAGE)
+                : sprintf('Asesmen ditutup. JFI %s — %s%s.', JobFitCalculator::format($result['jfi']),
+                    JobFitCalculator::BAND_LABELS[$result['band']], $result['complete'] ? '' : ' (belum lengkap)'))
             ->with('status', 'success');
     }
 

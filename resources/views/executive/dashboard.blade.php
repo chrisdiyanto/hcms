@@ -2,13 +2,18 @@
 
 @section('content')
 @php
-    $fmt = fn ($value, $decimals = 0) => number_format((float) $value, $decimals, ',', '.');
-    $pct = fn ($part, $total) => $total > 0 ? round($part / $total * 100, 1) : 0;
+    // K9: pengguna tanpa hak membuka data pegawai individual melihat kelompok 1–4 orang sebagai "< 5"
+    $mask = app(\App\Support\Privacy\SmallGroups::class)->masks('employees');
+    $small = fn ($n) => $mask && \App\Support\Privacy\SmallGroups::hidden($n);
+    $fmt = fn ($value, $decimals = 0) => $value === null ? '—' : ($decimals === 0 && $small($value) ? \App\Support\Privacy\SmallGroups::LABEL : number_format((float) $value, $decimals, ',', '.'));
+    $pct = fn ($part, $total) => $small($part) || $small($total) ? null : ($total > 0 ? round($part / $total * 100, 1) : 0);
+    $chart = fn (array $values) => \App\Support\Privacy\SmallGroups::chartValues($values, $mask);
+    $num = fn ($value) => number_format((float) $value, 0, ',', '.'); // jumlah unit/lokasi (bukan orang)
     $endLabel = \Carbon\Carbon::parse($end)->translatedFormat('d F Y');
     $prevLabel = \Carbon\Carbon::parse($start)->subDay()->translatedFormat('F Y');
 
     $delta = $headcount - $prevHeadcount;
-    $deltaPct = $prevHeadcount > 0 ? round($delta / $prevHeadcount * 100, 1) : null;
+    $deltaPct = $prevHeadcount > 0 && ! $small($headcount) && ! $small($prevHeadcount) ? round($delta / $prevHeadcount * 100, 1) : null;
 
     // Komposisi (urutan tetap = urutan slot warna; "Belum diisi" selalu abu-abu)
     $genderItems = collect([
@@ -43,15 +48,15 @@
 
     $trendLabels = array_column($trend, 'label');
     $charts = [
-        'trend' => ['type' => 'area', 'name' => 'Pegawai aktif', 'labels' => $trendLabels, 'values' => array_column($trend, 'headcount')],
+        'trend' => ['type' => 'area', 'name' => 'Pegawai aktif', 'labels' => $trendLabels, 'values' => $chart(array_column($trend, 'headcount'))],
         'flows' => ['type' => 'flows', 'labels' => $trendLabels, 'series' => [
-            ['name' => 'Bergabung', 'values' => array_column($trend, 'hires'), 'slot' => 2],
-            ['name' => 'Keluar', 'values' => array_column($trend, 'terminations'), 'slot' => 1],
+            ['name' => 'Bergabung', 'values' => $chart(array_column($trend, 'hires')), 'slot' => 2],
+            ['name' => 'Keluar', 'values' => $chart(array_column($trend, 'terminations')), 'slot' => 1],
         ]],
-        'gender' => ['type' => 'donut', 'items' => $genderItems->all()],
-        'status' => ['type' => 'donut', 'items' => $statusItems->all()],
-        'units' => ['type' => 'hbar', 'name' => 'Pegawai', 'slot' => 0, 'labels' => $topUnits->pluck('unit_name')->all(), 'values' => $topUnits->pluck('total')->map(fn ($v) => (int) $v)->all()],
-        'open' => ['type' => 'hbar', 'name' => 'Posisi terbuka', 'slot' => 3, 'labels' => $topOpen->pluck('label')->all(), 'values' => $topOpen->pluck('value')->all()],
+        'gender' => ['type' => 'donut', 'items' => $genderItems->map(fn ($i) => ['value' => $small($i['value']) ? null : $i['value']] + $i)->all()],
+        'status' => ['type' => 'donut', 'items' => $statusItems->map(fn ($i) => ['value' => $small($i['value']) ? null : $i['value']] + $i)->all()],
+        'units' => ['type' => 'hbar', 'name' => 'Pegawai', 'slot' => 0, 'labels' => $topUnits->pluck('unit_name')->all(), 'values' => $chart($topUnits->pluck('total')->map(fn ($v) => (int) $v)->all())],
+        'open' => ['type' => 'hbar', 'name' => 'Posisi terbuka', 'slot' => 3, 'labels' => $topOpen->pluck('label')->all(), 'values' => $chart($topOpen->pluck('value')->all())],
         'fill' => ['type' => 'ring', 'value' => $fillRate ?? 0, 'slot' => 2],
     ];
 @endphp
@@ -80,7 +85,7 @@
         @foreach([
             ['Bergabung', $fmt($hires), 'pegawai baru bulan ini', 'fa fa-user-plus'],
             ['Keluar', $fmt($terminations), 'terminasi diproses', 'fa fa-user-times'],
-            ['Turnover', $turnoverRate !== null ? $fmt($turnoverRate, 1).'%' : '—', 'keluar ÷ rata-rata pegawai', 'fa fa-sync-alt'],
+            ['Turnover', $turnoverRate !== null && ! $small($terminations) ? $fmt($turnoverRate, 1).'%' : '—', 'keluar ÷ rata-rata pegawai', 'fa fa-sync-alt'],
         ] as [$label, $value, $note, $icon])
             <div class="exec-hero-stat">
                 <div class="exec-hero-stat-label"><i class="{{ $icon }}" aria-hidden="true"></i> {{ $label }}</div>
@@ -94,7 +99,7 @@
         <div class="exec-ring-wrap">
             <div data-chart="{{ json_encode($charts['fill']) }}" class="exec-ring-chart" role="img"
                 aria-label="Keterisian posisi {{ $fillRate !== null ? $fmt($fillRate, 1).' persen' : 'belum ada kapasitas' }}"></div>
-            <div class="exec-ring-center"><span class="tabular-nums">{{ $fillRate !== null ? $fmt($fillRate, 0).'%' : '—' }}</span><small>terisi</small></div>
+            <div class="exec-ring-center"><span class="tabular-nums">{{ $fillRate !== null ? $num($fillRate).'%' : '—' }}</span><small>terisi</small></div>
         </div>
         <div>
             <div class="exec-hero-stat-label"><i class="fa fa-briefcase" aria-hidden="true"></i> Keterisian posisi</div>
@@ -113,7 +118,7 @@
                 <span class="exec-pill exec-tone-neutral">12 bulan</span>
             </div>
             <div data-chart="{{ json_encode($charts['trend']) }}" style="height: 240px" role="img"
-                aria-label="Pegawai aktif akhir bulan dari {{ $trend[0]['label'] }} sampai {{ end($trend)['label'] }}: {{ collect($trend)->map(fn ($t) => $t['label'].' '.$t['headcount'])->implode(', ') }}"></div>
+                aria-label="Pegawai aktif akhir bulan dari {{ $trend[0]['label'] }} sampai {{ end($trend)['label'] }}: {{ collect($trend)->map(fn ($t) => $t['label'].' '.$fmt($t['headcount']))->implode(', ') }}"></div>
         </div></div>
     </div>
     <div class="col-lg-5">
@@ -123,7 +128,7 @@
                 <span class="exec-pill exec-tone-neutral">bergabung vs keluar</span>
             </div>
             <div data-chart="{{ json_encode($charts['flows']) }}" style="height: 240px" role="img"
-                aria-label="Pegawai bergabung dan keluar per bulan: {{ collect($trend)->map(fn ($t) => $t['label'].' +'.$t['hires'].'/−'.$t['terminations'])->implode(', ') }}"></div>
+                aria-label="Pegawai bergabung dan keluar per bulan: {{ collect($trend)->map(fn ($t) => $t['label'].' +'.$fmt($t['hires']).'/−'.$fmt($t['terminations']))->implode(', ') }}"></div>
         </div></div>
     </div>
 </div>
@@ -141,7 +146,7 @@
                     <div class="exec-donut">
                         <div class="exec-donut-chart">
                             <div data-chart="{{ json_encode($charts[$key]) }}" style="height: 168px" role="img"
-                                aria-label="{{ $title }}: {{ $items->map(fn ($i) => $i['label'].' '.$i['value'])->implode(', ') }}"></div>
+                                aria-label="{{ $title }}: {{ $items->map(fn ($i) => $i['label'].' '.$fmt($i['value']))->implode(', ') }}"></div>
                             <div class="exec-donut-center"><span class="tabular-nums">{{ $fmt($total) }}</span><small>{{ $unit }}</small></div>
                         </div>
                         <ul class="exec-legend" aria-label="Legenda {{ $title }}">
@@ -183,15 +188,15 @@
         <div class="card exec-card h-100 mb-0"><div class="card-body d-flex flex-column">
             <div class="exec-section-header">
                 <h5 class="exec-section-title"><span class="exec-icon-box exec-tone-success" aria-hidden="true"><i class="fa fa-sitemap"></i></span><span>10 unit dengan pegawai terbanyak</span></h5>
-                <span class="exec-pill exec-tone-neutral tabular-nums">{{ $fmt($byUnit->count()) }} unit</span>
+                <span class="exec-pill exec-tone-neutral tabular-nums">{{ $num($byUnit->count()) }} unit</span>
             </div>
             @if($byUnit->isEmpty())
                 <div class="exec-empty-state"><p class="small mb-0">Belum ada penempatan pegawai pada periode ini.</p></div>
             @else
                 <div data-chart="{{ json_encode($charts['units']) }}" style="height: {{ 34 * $topUnits->count() + 16 }}px" role="img"
-                    aria-label="Pegawai per unit: {{ $topUnits->map(fn ($u) => $u->unit_name.' '.$u->total)->implode(', ') }}"></div>
+                    aria-label="Pegawai per unit: {{ $topUnits->map(fn ($u) => $u->unit_name.' '.$fmt($u->total))->implode(', ') }}"></div>
                 <details class="exec-details mt-3">
-                    <summary>Lihat semua unit ({{ $fmt($byUnit->count()) }})</summary>
+                    <summary>Lihat semua unit ({{ $num($byUnit->count()) }})</summary>
                     <input class="form-control form-control-sm exec-unit-search my-2" type="search" data-unit-filter placeholder="Cari unit..." autocomplete="off" aria-label="Cari unit pegawai">
                     <div class="table-responsive exec-table-scroll"><table class="table exec-table mb-0">
                         <thead><tr><th>Unit organisasi</th><th class="text-end">Pegawai</th><th class="text-end">Porsi</th></tr></thead>
@@ -222,11 +227,11 @@
                     <p class="small mb-0">{{ $positions->isEmpty() ? 'Belum ada kapasitas posisi aktif pada periode ini.' : 'Semua kapasitas posisi sudah terisi.' }}</p></div>
             @else
                 <div data-chart="{{ json_encode($charts['open']) }}" style="height: {{ 34 * $topOpen->count() + 16 }}px" role="img"
-                    aria-label="Posisi terbuka per unit: {{ $topOpen->map(fn ($u) => $u['label'].' '.$u['value'])->implode(', ') }}"></div>
+                    aria-label="Posisi terbuka per unit: {{ $topOpen->map(fn ($u) => $u['label'].' '.$fmt($u['value']))->implode(', ') }}"></div>
             @endif
             @if($positions->isNotEmpty())
                 <details class="exec-details mt-3">
-                    <summary>Lihat keterisian semua unit ({{ $fmt($positions->count()) }})</summary>
+                    <summary>Lihat keterisian semua unit ({{ $num($positions->count()) }})</summary>
                     <input class="form-control form-control-sm exec-unit-search my-2" type="search" data-unit-filter placeholder="Cari unit..." autocomplete="off" aria-label="Cari unit dengan posisi terbuka">
                     <div class="table-responsive exec-table-scroll"><table class="table exec-table mb-0">
                         <thead><tr><th>Unit organisasi</th><th class="text-end">Terisi / kapasitas</th><th class="text-end">Terbuka</th></tr></thead>
@@ -249,6 +254,9 @@
     </div>
 </div>
 
+@if($mask)
+    <p class="small text-muted mt-3 mb-0"><i class="fa fa-user-secret" aria-hidden="true"></i> Kelompok berisi 1–4 orang ditampilkan "&lt; 5" untuk melindungi privasi pegawai.</p>
+@endif
 @if($scoped)
     <p class="small text-muted mt-3 mb-0"><i class="fa fa-info-circle" aria-hidden="true"></i> Angka dibatasi unit dalam cakupan data Anda; pegawai yang keluar atau pindah tetap dihitung di unit asalnya selama periode.</p>
 @endif

@@ -27,7 +27,7 @@
 				<td class="small">{{ $r->due_date ?: '—' }}@if($r->status === 'open' && $r->due_date && $r->due_date < now()->toDateString()) <span class="badge bg-danger">lewat</span>@endif</td>
 				<td class="text-center small">{{ (int) ($c->done ?? 0) }}/{{ (int) ($c->total ?? 0) }}</td>
 				<td><span class="badge {{ ['open' => 'bg-info', 'closed' => 'bg-success', 'cancelled' => 'bg-secondary'][$r->status] }}">{{ $statuses[$r->status] }}</span></td>
-				<td class="text-end small">@if($r->jfi !== null){{ number_format($r->jfi, 1, ',', '.') }}%<div class="text-muted">{{ $bands[$r->band] ?? $r->band }}</div>@else — @endif</td>
+				<td class="text-end small">@if($r->band !== null){{ \App\Domain\Competency\Services\JobFitCalculator::format($r->jfi) }}<div class="text-muted">{{ $bands[$r->band] ?? $r->band }}</div>@else — @endif</td>
 				<td class="text-end"><a href="{{ url('competency/assessments/'.$r->id) }}" class="btn btn-sm btn-outline-primary">Detail</a></td>
 			</tr>
 		@empty

@@ -18,7 +18,7 @@
 {{-- Setelah error validasi, kembali ke tab form yang dikirim (field _tab) --}}
 <div x-data="{ tab: (location.hash || '#' + @js(old('_tab', 'summary'))).slice(1) }" @hashchange.window="tab = (location.hash || '#summary').slice(1)">
 	<ul class="nav nav-tabs mb-3">
-		@foreach(['summary' => 'Ringkasan', 'assignments' => 'Penugasan', 'records' => 'Data riwayat', 'history' => 'Riwayat status', 'termination' => 'Terminasi'] as $key => $label)
+		@foreach(['summary' => 'Ringkasan', 'assignments' => 'Penugasan', 'records' => 'Data riwayat', 'history' => 'Riwayat status', 'career' => 'Aspirasi karier', 'termination' => 'Terminasi'] as $key => $label)
 			<li class="nav-item"><a class="nav-link" :class="{ active: tab === '{{ $key }}' || ('{{ $key }}' === 'records' && @js(array_keys($recordTypes)).includes(tab)) }" href="#{{ $key }}">{{ $label }}</a></li>
 		@endforeach
 	</ul>
@@ -180,6 +180,14 @@
 	</div>
 
 	{{-- Terminasi --}}
+	{{-- Aspirasi karier (diisi pegawai di Layanan Mandiri; masukan talent pool & suksesi) --}}
+	<div x-show="tab === 'career'" x-cloak>
+		<div class="card"><div class="card-body">
+			<p class="text-muted small">Diisi pegawai melalui Layanan Mandiri › Aspirasi Karier Saya. Bahan pembicaraan karier, bukan pengajuan mutasi.</p>
+			@include('employee._career_history', ['history' => $careerHistory])
+		</div></div>
+	</div>
+
 	<div x-show="tab === 'termination'" x-cloak>
 		<div class="card"><div class="card-body">
 			@foreach($terminations as $t)

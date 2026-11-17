@@ -27,6 +27,7 @@ final class HcmsModules
         'organisasi' => ['name' => 'Organisasi', 'id' => 'Organisasi', 'icon' => 'fa fa-sitemap', 'position' => 'sidebar'],
         'kompetensi' => ['name' => 'Kompetensi', 'id' => 'Kompetensi', 'icon' => 'fa fa-medal', 'position' => 'sidebar'],
         'kinerja' => ['name' => 'Kinerja', 'id' => 'Kinerja', 'icon' => 'fa fa-bullseye', 'position' => 'sidebar'],
+        'talenta' => ['name' => 'Talenta', 'id' => 'Talenta', 'icon' => 'fa fa-gem', 'position' => 'sidebar'],
     ];
 
     public static function definitions(): array
@@ -103,6 +104,11 @@ final class HcmsModules
                 'access' => self::everyone(), 'register_module' => false],
             'myteamperformance' => ['title' => 'Kinerja Tim Saya', 'table' => 'performance_plans', 'url' => 'performance/team', 'parent' => 'layanan', 'icon' => 'fa fa-users-cog', 'title_id' => 'Kinerja Tim Saya',
                 'access' => self::everyone(), 'register_module' => false],
+            'mycareer' => ['title' => 'Aspirasi Karier Saya', 'table' => 'employee_career_aspirations', 'url' => 'ess/career', 'parent' => 'layanan', 'icon' => 'fa fa-compass', 'title_id' => 'Aspirasi Karier Saya',
+                'access' => self::everyone(), 'register_module' => false],
+            // Talent (prasyarat P3 CBHRM): kamus instrumen asesmen potensi berversi
+            'potentialinstruments' => ['title' => 'Instrumen Potensi', 'table' => 'potential_instruments', 'url' => 'talent/potential-instruments', 'parent' => 'talenta', 'icon' => 'fa fa-seedling', 'title_id' => 'Instrumen Potensi',
+                'access' => $hrManage + [Roles::HRBP => self::READ, Roles::AUDITOR => self::READ]],
             'myassessments' => ['title' => 'Asesmen Saya', 'table' => 'assessment_raters', 'url' => 'competency/my-assessments', 'parent' => 'layanan', 'icon' => 'fa fa-star', 'title_id' => 'Asesmen Saya',
                 'access' => self::everyone(), 'register_module' => false],
 

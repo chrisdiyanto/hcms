@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Employee;
 
 use App\Domain\Employee\Services\EmployeeIdentity;
 use App\Domain\Employee\Workflow\EmployeeChangeRequestSubject;
+use App\Domain\Talent\CareerAspirations;
 use App\Http\Controllers\Controller;
 use App\Support\Audit\AuditLog;
 use App\Support\Audit\DataExport;
@@ -58,6 +59,7 @@ class EssController extends Controller
             'kesesuaian_jabatan' => $rows('job_fit_results'),
             'riwayat_skor_kompetensi' => $rows('employee_competency_history', 'assessed_at'),
             'riwayat_kesesuaian_jabatan' => $rows('job_fit_history', 'computed_at'),
+            'aspirasi_karier' => $rows('employee_career_aspirations', 'submitted_at'),
             'riwayat_gap_kompetensi' => $rows('competency_gap_history', 'job_fit_history_id'),
             'rencana_kinerja' => TenantScope::table('performance_plans')->where('employee_id', $id)->get()->map(fn ($p) => (array) $p)->all(),
             'kpi' => TenantScope::table('performance_objectives')->whereIn('plan_id', $planIds)->get()->map(fn ($o) => (array) $o)->all(),
@@ -94,6 +96,43 @@ class EssController extends Controller
         $subject->submit($employee, collect($data)->except('reason')->all(), $data['reason'], (int) auth()->id());
 
         return redirect('ess/profile')->with('message', 'Pengajuan perubahan dikirim ke HR untuk diverifikasi.')->with('status', 'success');
+    }
+
+    /** Aspirasi karier saya (prasyarat P3 CBHRM): minat jabatan/rumpun, horizon, mobilitas. */
+    public function career(CareerAspirations $aspirations)
+    {
+        $employee = $this->me();
+
+        return view('employee.career', [
+            'pageTitle' => 'Aspirasi Karier Saya',
+            'pageNote' => $employee ? $employee->employee_number : '',
+            'employee' => $employee,
+            'current' => $employee ? $aspirations->current((int) $employee->id) : null,
+            'history' => $employee ? $aspirations->history((int) $employee->id) : collect(),
+            'families' => TenantScope::table('job_families')->orderBy('name')->pluck('name', 'id'),
+            'jobs' => TenantScope::table('jobs_catalog')->orderBy('title')->get(['id', 'title', 'job_family_id']),
+            'horizons' => CareerAspirations::HORIZONS,
+            'mobility' => CareerAspirations::MOBILITY,
+        ]);
+    }
+
+    public function saveCareer(Request $request, CareerAspirations $aspirations)
+    {
+        $employee = $this->me() ?? abort(404);
+        $data = $request->validate([
+            'target_job_family_id' => ['nullable', 'integer', TenantScope::existsRule('job_families', 'id')],
+            'target_job_id' => ['nullable', 'integer', TenantScope::existsRule('jobs_catalog', 'id')],
+            'target_role' => ['nullable', 'string', 'max:150', 'required_without_all:target_job_family_id,target_job_id'],
+            'horizon' => ['required', Rule::in(array_keys(CareerAspirations::HORIZONS))],
+            'mobility' => ['required', Rule::in(array_keys(CareerAspirations::MOBILITY))],
+            'interests' => ['nullable', 'string', 'max:2000'],
+            'development_needs' => ['nullable', 'string', 'max:2000'],
+        ], ['target_role.required_without_all' => 'Pilih rumpun/jabatan yang diminati atau tuliskan peran yang diinginkan.']);
+
+        $aspirations->submit((int) $employee->id, $data + ['target_job_family_id' => null, 'target_job_id' => null, 'target_role' => null,
+            'interests' => null, 'development_needs' => null], (int) auth()->id());
+
+        return redirect('ess/career')->with('message', 'Aspirasi karier tersimpan. Atasan dan HR dapat melihatnya untuk pembicaraan karier.')->with('status', 'success');
     }
 
     private function me(): ?object

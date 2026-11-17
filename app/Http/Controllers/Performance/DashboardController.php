@@ -8,6 +8,7 @@ use App\Domain\Performance\Services\PerformancePeriods;
 use App\Domain\Performance\Services\PerformancePolicy;
 use App\Http\Controllers\Concerns\AuthorizesHcmsModule;
 use App\Http\Controllers\Controller;
+use App\Support\Privacy\SmallGroups;
 use App\Support\Tenancy\TenantScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -75,7 +76,9 @@ class DashboardController extends Controller
         $coverage = $approved->isNotEmpty() ? round($completed / $approved->count() * 100, 1) : 0;
         $activePips = TenantScope::table('performance_improvement_plans')->whereIn('employee_id', $employees)
             ->whereIn('status', ['active', 'extended'])->where('start_date', '<=', $period->end_date)->where('end_date', '>=', $period->start_date)->count();
-        $byUnit = $this->scoresByUnit($scores, $period->end_date);
+        // K9: tanpa hak membuka daftar rating individual, unit < 5 pegawai tidak ditampilkan rata-ratanya dan band 1–4 orang disamarkan
+        $mask = app(SmallGroups::class)->masks('perfperiods');
+        $byUnit = $this->scoresByUnit($scores, $period->end_date, $mask);
         $trend = $this->closedTrend($periods->filter(fn ($item) => $item->end_date <= $period->end_date));
         $trendChange = count($trend) >= 2 ? round($trend[count($trend) - 1]['score'] - $trend[count($trend) - 2]['score'], 2) : null;
         $trendChart = count($trend) >= 1 ? [
@@ -115,15 +118,15 @@ class DashboardController extends Controller
             'riskCount' => $riskCount, 'activePips' => $activePips, 'bandCounts' => $bandCounts,
             'bandChart' => $scores->isNotEmpty() ? [
                 'type' => 'hbar', 'name' => 'Pegawai', 'slot' => 0,
-                'labels' => $bandCounts->pluck('label')->all(), 'values' => $bandCounts->pluck('count')->all(),
+                'labels' => $bandCounts->pluck('label')->all(), 'values' => SmallGroups::chartValues($bandCounts->pluck('count')->all(), $mask),
                 'colors' => $bands->map(fn ($band) => in_array($band['code'], $riskCodes, true) ? '#c2283a' : '#1baf7a')->all(),
             ] : null,
             'trend' => $trend, 'trendChart' => $trendChart, 'unitChart' => $unitChart, 'trendChange' => $trendChange,
-            'insights' => $insights, 'sourceLabel' => $source,
+            'insights' => $insights, 'sourceLabel' => $source, 'mask' => $mask,
         ]);
     }
 
-    private function scoresByUnit(Collection $scores, string $asOf): Collection
+    private function scoresByUnit(Collection $scores, string $asOf, bool $mask = false): Collection
     {
         if ($scores->isEmpty()) {
             return collect();
@@ -135,6 +138,7 @@ class DashboardController extends Controller
             ->pluck('unit.unit_name', 'employee_assignments.employee_id');
 
         return $scores->groupBy(fn ($score) => $units[$score->employee_id] ?? 'Tanpa unit')
+            ->reject(fn ($group) => $mask && SmallGroups::hidden($group->count()))
             ->map(fn ($group) => round((float) $group->avg('score'), 2))->sortDesc();
     }
 

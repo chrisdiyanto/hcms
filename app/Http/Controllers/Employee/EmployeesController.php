@@ -7,6 +7,7 @@ use App\Domain\Employee\Actions\TerminateEmployee;
 use App\Domain\Employee\Services\EmployeeHistory;
 use App\Domain\Employee\Services\EmployeeIdentity;
 use App\Domain\Employee\Services\EmployeeScope;
+use App\Domain\Talent\CareerAspirations;
 use App\Http\Controllers\Concerns\AuthorizesHcmsModule;
 use App\Http\Controllers\Controller;
 use App\Support\Audit\AuditLog;
@@ -185,6 +186,7 @@ class EmployeesController extends Controller
             'access' => $access,
             'identity' => $this->can('is_sensitive') ? EmployeeIdentity::masked($id) : null,
             'records' => $records,
+            'careerHistory' => app(CareerAspirations::class)->history($id),
             'recordTypes' => EmployeeRecordsController::TYPES,
             'assignments' => $assignments,
             'activeAssignments' => $assignments->filter(fn ($a) => $a->effective_from <= $today && (! $a->effective_to || $a->effective_to >= $today)),

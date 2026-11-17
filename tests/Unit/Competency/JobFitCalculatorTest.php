@@ -29,6 +29,8 @@ class JobFitCalculatorTest extends TestCase
         $this->assertSame([-1.0, -2.0, 0.0, -1.0], array_column($result['items'], 'gap'));
         $this->assertSame(JobFitCalculator::READY_LATER, $result['band']);
         $this->assertTrue($result['complete']);
+        $this->assertSame(100.0, $result['coverage']);
+        $this->assertSame('71,3%', JobFitCalculator::format($result['jfi']));
     }
 
     public function test_kelebihan_kompetensi_dibatasi_100_persen(): void
@@ -55,23 +57,55 @@ class JobFitCalculatorTest extends TestCase
         $this->assertSame(JobFitCalculator::READY_NOW, (new JobFitCalculator([85, 70]))->band(86));
     }
 
-    public function test_kompetensi_belum_dinilai_dihitung_nol_dan_ditandai(): void
+    /** Kamus metrik K1: di bawah 80% bobot berskor, JFI tidak dihitung (bukan nol). */
+    public function test_cakupan_di_bawah_80_persen_jfi_data_belum_cukup(): void
     {
         $result = (new JobFitCalculator)->calculate([
             ['code' => 'A', 'weight' => 2, 'required' => 4, 'actual' => 4],
             ['code' => 'B', 'weight' => 2, 'required' => 4, 'actual' => null],
         ]);
 
-        $this->assertSame(50.0, $result['jfi']);
+        $this->assertNull($result['jfi']);
+        $this->assertSame(JobFitCalculator::INSUFFICIENT, $result['band']);
+        $this->assertSame(50.0, $result['coverage']);
         $this->assertFalse($result['complete']);
-        $this->assertSame(-4.0, $result['items'][1]['gap']);
+        $this->assertNull($result['items'][1]['gap'], 'kompetensi tanpa skor tidak punya gap');
+        $this->assertSame('—', JobFitCalculator::format($result['jfi']));
+    }
+
+    /** K1: tepat 80% bobot berskor → JFI dihitung, yang belum dinilai bernilai 0 dan ditandai belum lengkap. */
+    public function test_cakupan_80_persen_jfi_dihitung_dan_belum_lengkap(): void
+    {
+        $result = (new JobFitCalculator)->calculate([
+            ['code' => 'A', 'weight' => 3, 'required' => 4, 'actual' => 4],
+            ['code' => 'B', 'weight' => 1, 'required' => 4, 'actual' => 4],
+            ['code' => 'C', 'weight' => 1, 'required' => 4, 'actual' => null],
+        ]);
+
+        $this->assertSame(80.0, $result['coverage']);
+        $this->assertSame(80.0, $result['jfi']);
+        $this->assertSame(JobFitCalculator::READY_1_2, $result['band']);
+        $this->assertFalse($result['complete']);
+    }
+
+    /** K3: gap kritis = kritikalitas 3 dan gap ≤ −1. */
+    public function test_gap_kritis(): void
+    {
+        $items = (new JobFitCalculator)->calculate([
+            ['code' => 'A', 'weight' => 3, 'required' => 4, 'actual' => 3],
+            ['code' => 'B', 'weight' => 3, 'required' => 4, 'actual' => 3.5],
+            ['code' => 'C', 'weight' => 2, 'required' => 4, 'actual' => 2],
+        ])['items'];
+
+        $this->assertSame([true, false, false], array_column($items, 'critical'));
+        $this->assertFalse(JobFitCalculator::isCriticalGap(3, null));
     }
 
     public function test_profil_kosong_tidak_membagi_nol(): void
     {
         $result = (new JobFitCalculator)->calculate([]);
 
-        $this->assertSame(0.0, $result['jfi']);
-        $this->assertSame(JobFitCalculator::READY_LATER, $result['band']);
+        $this->assertNull($result['jfi']);
+        $this->assertSame(JobFitCalculator::INSUFFICIENT, $result['band']);
     }
 }

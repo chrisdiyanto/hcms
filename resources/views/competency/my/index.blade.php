@@ -45,7 +45,7 @@
 					<p class="text-muted small mb-0">Belum ada hasil asesmen yang berlaku.</p>
 				@else
 					<div class="d-flex align-items-baseline gap-2 mb-2">
-						<span class="h3 mb-0">{{ number_format($fit['jfi'], 1, ',', '.') }}%</span>
+						<span class="h3 mb-0">{{ \App\Domain\Competency\Services\JobFitCalculator::format($fit['jfi']) }}</span>
 						<span class="small">Job Fit Index · {{ $bands[$fit['band']] }}</span>
 					</div>
 					<table class="table table-sm small mb-0">

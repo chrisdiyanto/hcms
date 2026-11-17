@@ -2,6 +2,7 @@
 
 namespace App\Domain\Analytics;
 
+use App\Domain\Competency\Services\JobFitCalculator;
 use App\Support\Audit\AuditLog;
 use App\Support\Security\DataScope;
 use Carbon\Carbon;
@@ -23,7 +24,7 @@ use InvalidArgumentException;
 class MonthlySnapshot
 {
     /** Naikkan bila definisi metrik berubah; tersimpan di setiap snapshot. */
-    public const DEFINITIONS_VERSION = 1;
+    public const DEFINITIONS_VERSION = 2; // v2 (2026-11-17): kamus metrik K1 (JFI butuh ≥ 80% bobot) & K3 (gap kritis ≤ −1)
 
     public const METRICS = [
         'headcount' => 'Pegawai aktif per akhir bulan',
@@ -32,12 +33,13 @@ class MonthlySnapshot
         'hires' => 'Pegawai bergabung selama bulan (unit per tanggal bergabung)',
         'terminations' => 'Terminasi diproses selama bulan (unit per tanggal terminasi)',
         'competency_valid' => 'Pegawai aktif dengan ≥ 1 skor kompetensi yang masih berlaku',
-        'jfi_n' => 'Pegawai aktif yang memiliki JFI (perhitungan terakhir ≤ akhir bulan)',
+        'jfi_n' => 'Pegawai aktif yang memiliki JFI (perhitungan terakhir ≤ akhir bulan; tidak termasuk data belum cukup)',
+        'jfi_insufficient' => 'Pegawai aktif dengan perhitungan JFI terakhir berstatus data belum cukup (< 80% bobot berskor)',
         'jfi_sum' => 'Jumlah JFI (rata-rata = jfi_sum ÷ jfi_n)',
         'jfi_ready_now' => 'JFI band siap sekarang',
         'jfi_ready_1_2' => 'JFI band siap 1–2 tahun',
         'jfi_ready_later' => 'JFI band siap > 2 tahun',
-        'critical_gap_employees' => 'Pegawai dengan ≥ 1 kompetensi kritikalitas 3 bergap negatif (definisi sementara sampai kamus metrik P4)',
+        'critical_gap_employees' => 'Pegawai dengan ≥ 1 gap kritis: kritikalitas 3 dan gap ≤ −1 (kamus metrik K3)',
         'performance_rated' => 'Pegawai aktif dengan rating kinerja final terakhir (rated)',
         'performance_score_sum' => 'Jumlah skor final (rata-rata = sum ÷ performance_rated)',
         // + performance_band:{kode band} per band rating final
@@ -149,13 +151,15 @@ class MonthlySnapshot
         $add(DB::select('SELECT '.$this->unitAt('t.employee_id', 't.termination_date').' AS unit_id, COUNT(*) AS terminations
             FROM employee_terminations t WHERE t.tenant_id = ? AND t.state = \'processed\' AND t.termination_date BETWEEN ? AND ? GROUP BY unit_id', [$tenantId, $start, $asOf]));
 
+        $criticalWeight = JobFitCalculator::CRITICAL_WEIGHT;
+        $criticalGap = JobFitCalculator::CRITICAL_GAP;
         // Kompetensi per akhir bulan dari riwayat P1: skor berlaku & JFI terakhir ≤ as_of
         $add(DB::select("SELECT x.unit_id, COUNT(*) AS competency_valid FROM ({$active['sql']}) x
             WHERE EXISTS (SELECT 1 FROM employee_competency_history h WHERE h.employee_id = x.employee_id AND h.assessed_at <= ? AND h.valid_until >= ?)
             GROUP BY x.unit_id", [...$active['bindings'], $asOf, $asOf]));
-        $add(DB::select("SELECT x.unit_id, COUNT(*) AS jfi_n, SUM(f.jfi) AS jfi_sum,
+        $add(DB::select("SELECT x.unit_id, SUM(f.jfi IS NOT NULL) AS jfi_n, SUM(f.jfi) AS jfi_sum, SUM(f.jfi IS NULL) AS jfi_insufficient,
                 SUM(f.band = 'ready_now') AS jfi_ready_now, SUM(f.band = 'ready_1_2') AS jfi_ready_1_2, SUM(f.band = 'ready_later') AS jfi_ready_later,
-                SUM(EXISTS (SELECT 1 FROM competency_gap_history g WHERE g.job_fit_history_id = f.id AND g.criticality = 3 AND g.gap < 0)) AS critical_gap_employees
+                SUM(EXISTS (SELECT 1 FROM competency_gap_history g WHERE g.job_fit_history_id = f.id AND g.criticality >= {$criticalWeight} AND g.gap <= {$criticalGap})) AS critical_gap_employees
             FROM ({$active['sql']}) x
             JOIN (SELECT h.*, ROW_NUMBER() OVER (PARTITION BY h.employee_id ORDER BY h.computed_at DESC, h.id DESC) AS rn
                   FROM job_fit_history h WHERE h.tenant_id = ? AND h.computed_at <= ?) f ON f.employee_id = x.employee_id AND f.rn = 1

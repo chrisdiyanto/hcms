@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Analytics\MonthlySnapshot;
+use App\Domain\Competency\Services\CompetencyAssessment;
 use App\Domain\DataImport\CsvReader;
 use App\Domain\DataImport\ImportRegistry;
 use App\Domain\DataImport\ImportRunner;
@@ -117,3 +118,26 @@ Artisan::command('hcms:analytics-snapshot {--period= : YYYY-MM; bawaan bulan lal
 })->describe('Buat snapshot analitik bulanan (metrik aditif per unit) untuk People Analytics');
 
 Schedule::command('hcms:analytics-snapshot')->monthlyOn(1, '01:30')->withoutOverlapping()->onOneServer();
+
+// HCMS: hitung ulang gap & JFI dari skor yang masih berlaku (perubahan aturan kamus metrik, profil, atau kedaluwarsa)
+Artisan::command('hcms:competency-recalculate {--tenant= : Kode tenant; bawaan semua tenant aktif}', function (CompetencyAssessment $assessments) {
+    $tenants = DB::table('tenants')->where('status', 'active')
+        ->when($this->option('tenant'), fn ($q, $code) => $q->where('code', strtoupper($code)))->get(['id', 'code']);
+    $rows = [];
+    foreach ($tenants as $tenant) {
+        $count = app(TenantContext::class)->runAs((int) $tenant->id, null, function () use ($assessments) {
+            $pairs = TenantScope::table('job_fit_results')->get(['employee_id', 'position_id']);
+            foreach ($pairs as $pair) {
+                DB::transaction(fn () => $assessments->refreshFit((int) $pair->employee_id, (int) $pair->position_id));
+            }
+
+            return $pairs->count();
+        });
+        $rows[] = [$tenant->code, $count];
+    }
+    $this->table(['Tenant', 'JFI dihitung ulang'], $rows);
+
+    return 0;
+})->describe('Hitung ulang gap & JFI semua pegawai dari skor kompetensi yang masih berlaku');
+
+Schedule::command('hcms:competency-recalculate')->weeklyOn(0, '02:00')->withoutOverlapping()->onOneServer();

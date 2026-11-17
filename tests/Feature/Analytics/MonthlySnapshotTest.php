@@ -91,7 +91,7 @@ class MonthlySnapshotTest extends TestCase
         return $out;
     }
 
-    private function fit(int $employee, string $position, float $jfi, string $band, string $at, bool $criticalGap): void
+    private function fit(int $employee, string $position, ?float $jfi, string $band, string $at, bool $criticalGap): void
     {
         $fitId = DB::table('job_fit_history')->insertGetId(['tenant_id' => $this->tenant, 'employee_id' => $employee, 'position_id' => $this->positions[$position],
             'jfi' => $jfi, 'band' => $band, 'complete' => true, 'trigger' => 'assessment', 'computed_at' => $at, 'created_at' => now()]);
@@ -108,6 +108,8 @@ class MonthlySnapshotTest extends TestCase
         // Kompetensi: JFI Rina Oktober (gap kritis) dihitung; JFI Sari November tidak masuk snapshot Oktober
         $this->fit($this->ids['rina'], 'ANL', 70, 'ready_later', '2026-10-10 09:00:00', true);
         $this->fit($this->ids['sari'], 'LAIN', 95, 'ready_now', '2026-11-05 09:00:00', false);
+        // K1: JFI data belum cukup tidak masuk jfi_n / rata-rata, dihitung terpisah
+        $this->fit($this->ids['baru'], 'ANL', null, 'insufficient', '2026-10-20 09:00:00', false);
         // Kinerja: rating final Kepala disahkan September (dihitung), rating Rina disahkan November (belum)
         $period = $this->insert('performance_periods', ['code' => 'KIN-2026', 'name' => 'Kinerja 2026', 'start_date' => '2026-01-01', 'end_date' => '2026-06-30', 'status' => 'closed']);
         foreach ([[$this->ids['head'], 92.5, 'exceeds', '2026-09-15 10:00:00'], [$this->ids['rina'], 80, 'meets', '2026-11-02 10:00:00']] as [$emp, $score, $band, $final]) {
@@ -123,7 +125,7 @@ class MonthlySnapshotTest extends TestCase
         $this->assertSame(['headcount' => 3.0, 'female' => 2.0, 'male' => 1.0, 'hires' => 1.0, 'terminations' => 1.0],
             array_intersect_key($m['div'], array_flip(['headcount', 'female', 'male', 'hires', 'terminations'])));
         $this->assertSame(1.0, $m['lain']['headcount']);
-        $this->assertSame([1.0, 70.0, 1.0, 1.0], [$m['div']['jfi_n'], $m['div']['jfi_sum'], $m['div']['jfi_ready_later'], $m['div']['critical_gap_employees']]);
+        $this->assertSame([1.0, 70.0, 1.0, 1.0, 1.0], [$m['div']['jfi_n'], $m['div']['jfi_sum'], $m['div']['jfi_ready_later'], $m['div']['critical_gap_employees'], $m['div']['jfi_insufficient']]);
         $this->assertArrayNotHasKey('jfi_n', $m['lain'], 'JFI November tidak masuk snapshot Oktober');
         $this->assertSame([1.0, 92.5, 1.0], [$m['div']['performance_rated'], $m['div']['performance_score_sum'], $m['div']['performance_band:exceeds']]);
         $this->assertArrayNotHasKey('performance_band:meets', $m['div']);

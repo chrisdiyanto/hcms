@@ -67,6 +67,26 @@ class JobArchitectureTest extends TestCase
         ]);
     }
 
+    /** Prasyarat P3 CBHRM: posisi kritis wajib punya tingkat dampak & alasan; dicabut = dikosongkan. */
+    public function test_posisi_kritis_wajib_dampak_dan_alasan(): void
+    {
+        $arch = $this->seedArchitecture();
+        $this->position($arch, 'CRO', ['is_critical' => 1])->assertSessionHasErrors(['critical_impact', 'critical_reason']);
+        $this->position($arch, 'CRO', ['is_critical' => 1, 'critical_impact' => 3, 'critical_reason' => 'Pemegang izin regulator'])->assertSessionHasNoErrors();
+        $row = DB::table('positions')->where('code', 'CRO')->first();
+        $this->assertSame([1, 3, 'Pemegang izin regulator'], [(int) $row->is_critical, (int) $row->critical_impact, $row->critical_reason]);
+        $this->get('/organization/positions')->assertOk()->assertSee('Ya — Sangat tinggi');
+
+        // Status kritis dicabut: dampak & alasan ikut dikosongkan, perubahan tercatat di riwayat posisi
+        $this->put('/organization/positions/'.$row->id, ['code' => 'CRO', 'title' => 'Posisi CRO', 'company_id' => $this->company, 'unit_id' => $this->unit,
+            'job_id' => $arch['job'], 'grade_id' => $arch['grades']['G1'], 'status' => 'active', 'headcount' => 1, 'effective_from' => '2026-01-01',
+            'is_critical' => 0, 'critical_impact' => 3, 'critical_reason' => 'sisa form'])->assertSessionHasNoErrors();
+        $row = DB::table('positions')->where('id', $row->id)->first();
+        $this->assertSame([0, null, null], [(int) $row->is_critical, $row->critical_impact, $row->critical_reason]);
+        $changes = json_decode(DB::table('position_histories')->where('position_id', $row->id)->where('action', 'updated')->value('changes'), true);
+        $this->assertSame([3, null], $changes['critical_impact']);
+    }
+
     public function test_modul_organisasi_terdaftar_dengan_hak_default(): void
     {
         $this->assertSame(5, DB::table('tb_module')->whereIn('module_name', ['jobfamilies', 'joblevels', 'jobgrades', 'jobs', 'positions'])->where('module_type', 'core')->count());

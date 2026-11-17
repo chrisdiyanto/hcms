@@ -31,20 +31,31 @@ class CompetencyHistory
     /**
      * Satu perhitungan JFI beserta gap per kompetensi.
      *
-     * @param  array{jfi: float, band: string, complete: bool, items: array}  $fit
+     * @param  array{jfi: ?float, band: string, complete: bool, coverage?: float, items: array}  $fit
      */
-    public function recordFit(int $employeeId, int $positionId, ?int $assessmentId, array $fit, string $trigger, $computedAt): int
+    public function recordFit(int $employeeId, int $positionId, ?int $assessmentId, array $fit, string $trigger, $computedAt): ?int
     {
+        // Hitung ulang berkala tidak menambah riwayat bila hasilnya sama dengan perhitungan terakhir
+        if ($trigger === 'recalculation') {
+            $last = TenantScope::table('job_fit_history')->where('employee_id', $employeeId)->where('position_id', $positionId)
+                ->orderByDesc('computed_at')->orderByDesc('id')->first();
+            $same = fn ($a, $b) => ($a === null && $b === null) || ($a !== null && $b !== null && abs((float) $a - (float) $b) < 0.005);
+            if ($last && $last->band === $fit['band'] && (bool) $last->complete === $fit['complete']
+                && $same($last->jfi, $fit['jfi'] === null ? null : round($fit['jfi'], 2)) && $same($last->coverage, round($fit['coverage'] ?? 0, 2))) {
+                return null;
+            }
+        }
         $id = DB::table('job_fit_history')->insertGetId(TenantScope::fillForInsert('job_fit_history', [
             'employee_id' => $employeeId, 'position_id' => $positionId, 'assessment_id' => $assessmentId,
-            'jfi' => round($fit['jfi'], 2), 'band' => $fit['band'], 'complete' => $fit['complete'],
+            'jfi' => $fit['jfi'] === null ? null : round($fit['jfi'], 2), 'coverage' => isset($fit['coverage']) ? round($fit['coverage'], 2) : null,
+            'band' => $fit['band'], 'complete' => $fit['complete'],
             'trigger' => $trigger, 'computed_at' => $computedAt, 'created_at' => now(),
         ]));
         $rows = array_map(fn ($item) => TenantScope::fillForInsert('competency_gap_history', [
             'job_fit_history_id' => $id, 'employee_id' => $employeeId, 'position_id' => $positionId,
             'competency_id' => $item['competency_id'], 'competency_code' => $item['code'],
             'required_level' => (int) $item['required'], 'criticality' => (int) $item['weight'],
-            'actual' => $item['actual'], 'gap' => round($item['gap'], 2),
+            'actual' => $item['actual'], 'gap' => $item['gap'] === null ? null : round($item['gap'], 2),
         ]), $fit['items']);
         if ($rows) {
             DB::table('competency_gap_history')->insert($rows);
@@ -136,7 +147,7 @@ class CompetencyHistory
                 foreach ($chunk as $f) {
                     $id = DB::table('job_fit_history')->insertGetId([
                         'tenant_id' => $f->tenant_id, 'employee_id' => $f->employee_id, 'position_id' => $f->position_id,
-                        'assessment_id' => $f->assessment_id, 'jfi' => $f->jfi, 'band' => $f->band, 'complete' => $f->complete,
+                        'assessment_id' => $f->assessment_id, 'jfi' => $f->jfi, 'coverage' => $f->coverage ?? null, 'band' => $f->band, 'complete' => $f->complete,
                         'trigger' => 'backfill', 'computed_at' => $f->computed_at, 'created_at' => now(),
                     ]);
                     $rows = $gaps->get($f->employee_id.':'.$f->position_id, collect())->map(fn ($g) => [

@@ -24,9 +24,10 @@
 			@if($fit)
 				<hr>
 				<div class="text-center">
-					<div class="display-6 fw-bold">{{ number_format($fit->jfi, 1, ',', '.') }}%</div>
-					<div>Job Fit Index — <span class="badge {{ ['ready_now' => 'bg-success', 'ready_1_2' => 'bg-warning text-dark', 'ready_later' => 'bg-danger'][$fit->band] ?? 'bg-secondary' }}">{{ $bands[$fit->band] ?? $fit->band }}</span></div>
-					@unless($fit->complete)<div class="small text-muted mt-1">Belum lengkap: ada kompetensi tanpa skor (dihitung 0).</div>@endunless
+					<div class="display-6 fw-bold">{{ \App\Domain\Competency\Services\JobFitCalculator::format($fit->jfi) }}</div>
+					<div>Job Fit Index — <span class="badge {{ ['ready_now' => 'bg-success', 'ready_1_2' => 'bg-warning text-dark', 'ready_later' => 'bg-danger', 'insufficient' => 'bg-secondary'][$fit->band] ?? 'bg-secondary' }}">{{ $bands[$fit->band] ?? $fit->band }}</span></div>
+					@if($fit->jfi === null)<div class="small text-muted mt-1">Skor berlaku baru mencakup {{ number_format((float) $fit->coverage, 0, ',', '.') }}% bobot profil (minimal {{ (int) \App\Domain\Competency\Services\JobFitCalculator::MIN_COVERAGE }}%); JFI belum dihitung.</div>
+					@elseif(!$fit->complete)<div class="small text-muted mt-1">Belum lengkap: kompetensi tanpa skor berlaku dihitung 0 (cakupan {{ number_format((float) $fit->coverage, 0, ',', '.') }}% bobot).</div>@endif
 				</div>
 			@endif
 		</div></div>
@@ -105,7 +106,7 @@
 						<tr><td><code>{{ $g->competency_code }}</code> {{ $g->name }} @if($g->criticality == 3)<span class="badge bg-danger">kritis</span>@endif</td>
 							<td class="text-center">{{ $g->required_level }}</td>
 							<td class="text-center">{{ $g->actual !== null ? number_format($g->actual, 2, ',', '.') : '—' }}</td>
-							<td class="text-center fw-bold {{ $g->gap < 0 ? 'text-danger' : 'text-success' }}">{{ ($g->gap > 0 ? '+' : '').number_format($g->gap, 2, ',', '.') }}</td></tr>
+							<td class="text-center fw-bold {{ $g->gap === null ? 'text-muted' : ($g->gap < 0 ? 'text-danger' : 'text-success') }}">@if($g->gap === null)<span class="fw-normal small">belum dinilai</span>@else{{ ($g->gap > 0 ? '+' : '').number_format($g->gap, 2, ',', '.') }}@if(\App\Domain\Competency\Services\JobFitCalculator::isCriticalGap((int) $g->criticality, (float) $g->gap)) <span class="badge bg-danger">gap kritis</span>@endif @endif</td></tr>
 					@endforeach
 					</tbody>
 				</table>

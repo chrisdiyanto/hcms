@@ -56,7 +56,7 @@
         <div class="exec-hero-stats">
             @foreach([
                 ['Penilaian selesai', $fmt($coverage, 1).'%', $fmt($completed).' dari '.$fmt($approvedCount).' rencana disetujui', 'fa fa-check-circle'],
-                ['Perlu perhatian', $fmt($riskCount), 'hasil pada band terbawah', 'fa fa-exclamation-circle'],
+                ['Perlu perhatian', \App\Support\Privacy\SmallGroups::count($riskCount, $mask), 'hasil pada band terbawah', 'fa fa-exclamation-circle'],
                 ['PIP berjalan', $fmt($activePips), 'aktif atau diperpanjang', 'fa fa-life-ring'],
             ] as [$label, $value, $note, $icon])
                 <div class="exec-hero-stat">
@@ -99,7 +99,7 @@
                 <span class="exec-pill exec-tone-neutral">{{ $scored }} pegawai</span>
             </div>
             @if($bandChart)
-                <div data-chart="{{ json_encode($bandChart) }}" style="height:250px" role="img" aria-label="Sebaran hasil: {{ $bandCounts->map(fn ($b) => $b['label'].' '.$b['count'])->implode(', ') }}"></div>
+                <div data-chart="{{ json_encode($bandChart) }}" style="height:250px" role="img" aria-label="Sebaran hasil: {{ $bandCounts->map(fn ($b) => $b['label'].' '.\App\Support\Privacy\SmallGroups::count($b['count'], $mask))->implode(', ') }}"></div>
             @else
                 <div class="exec-empty-state"><p class="small mb-0">Belum ada hasil penilaian pada periode ini.</p></div>
             @endif

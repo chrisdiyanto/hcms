@@ -213,7 +213,7 @@ final class CompetencyAssessment
 
     // ------------------------------------------------------------------ tutup
 
-    /** @return array{jfi: float, band: string, complete: bool, scored: int} */
+    /** @return array{jfi: ?float, band: string, complete: bool, coverage: float, scored: int} */
     public function close(int $assessmentId, int $actorId): array
     {
         $assessment = $this->assessment($assessmentId);
@@ -262,7 +262,7 @@ final class CompetencyAssessment
             $this->suggestIdp($assessment, $fit['items']);
 
             AuditLog::updated('competency_assessments', $assessment->id, ['status' => 'open'],
-                ['status' => 'closed', 'jfi' => round($fit['jfi'], 1), 'band' => $fit['band']], 'Asesmen kompetensi ditutup');
+                ['status' => 'closed', 'jfi' => $fit['jfi'] === null ? null : round($fit['jfi'], 1), 'band' => $fit['band']], 'Asesmen kompetensi ditutup');
 
             $userId = TenantScope::table('employees')->where('id', $assessment->employee_id)->value('user_id');
             if ($userId) {
@@ -270,7 +270,7 @@ final class CompetencyAssessment
                     'competency/my-assessments', 'fa fa-check-circle');
             }
 
-            return ['jfi' => $fit['jfi'], 'band' => $fit['band'], 'complete' => $fit['complete'], 'scored' => $scored];
+            return ['jfi' => $fit['jfi'], 'band' => $fit['band'], 'complete' => $fit['complete'], 'coverage' => $fit['coverage'], 'scored' => $scored];
         });
     }
 
@@ -323,7 +323,7 @@ final class CompetencyAssessment
     /**
      * Hitung ulang gap & JFI pegawai terhadap sebuah posisi dari skor kompetensi yang masih berlaku.
      *
-     * @return array{jfi: float, band: string, complete: bool, items: array}
+     * @return array{jfi: ?float, band: string, complete: bool, coverage: float, items: array}
      */
     /** Versi cache agregat Laporan Kompetensi per tenant; naik setiap gap/JFI dihitung ulang. */
     public static function reportVersion(): int
@@ -347,11 +347,12 @@ final class CompetencyAssessment
             DB::table('competency_gaps')->insert(TenantScope::fillForInsert('competency_gaps', [
                 'employee_id' => $employeeId, 'position_id' => $positionId, 'competency_id' => $item['competency_id'],
                 'competency_code' => $item['code'], 'required_level' => (int) $item['required'], 'criticality' => (int) $item['weight'],
-                'actual' => $item['actual'], 'gap' => round($item['gap'], 2), 'computed_at' => $now,
+                'actual' => $item['actual'], 'gap' => $item['gap'] === null ? null : round($item['gap'], 2), 'computed_at' => $now,
             ]));
         }
 
-        $row = ['jfi' => round($fit['jfi'], 2), 'band' => $fit['band'], 'complete' => $fit['complete'], 'computed_at' => $now];
+        $row = ['jfi' => $fit['jfi'] === null ? null : round($fit['jfi'], 2), 'coverage' => round($fit['coverage'], 2),
+            'band' => $fit['band'], 'complete' => $fit['complete'], 'computed_at' => $now];
         if ($assessmentId) {
             $row['assessment_id'] = $assessmentId;
         }
@@ -389,7 +390,8 @@ final class CompetencyAssessment
     private function suggestIdp(object $assessment, array $items): void
     {
         foreach ($items as $item) {
-            if ((int) $item['weight'] !== 3 || $item['gap'] >= 0) {
+            // Draf IDP untuk setiap gap negatif kompetensi kritis (lebih luas dari metrik gap kritis K3)
+            if ((int) $item['weight'] !== JobFitCalculator::CRITICAL_WEIGHT || $item['gap'] === null || $item['gap'] >= 0) {
                 continue;
             }
             DB::table('competency_idp_suggestions')->insertOrIgnore(TenantScope::fillForInsert('competency_idp_suggestions', [

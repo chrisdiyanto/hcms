@@ -14,7 +14,9 @@ use Illuminate\Support\Facades\DB;
  */
 class PositionsController extends MasterDataController
 {
-    private const TRACKED = ['code', 'title', 'company_id', 'unit_id', 'job_id', 'grade_id', 'status', 'is_critical', 'work_location', 'headcount', 'effective_from', 'effective_to'];
+    public const IMPACTS = [1 => 'Sedang', 2 => 'Tinggi', 3 => 'Sangat tinggi'];
+
+    private const TRACKED = ['code', 'title', 'company_id', 'unit_id', 'job_id', 'grade_id', 'status', 'is_critical', 'critical_impact', 'critical_reason', 'work_location', 'headcount', 'effective_from', 'effective_to'];
 
     protected function module(): string
     {
@@ -61,6 +63,9 @@ class PositionsController extends MasterDataController
 
     protected function formatCell(object $row, string $key): string
     {
+        if ($key === 'is_critical') {
+            return $row->is_critical ? e('Ya — '.(self::IMPACTS[$row->critical_impact] ?? 'dampak belum diisi')) : '—';
+        }
         if ($key === 'status') {
             return ['active' => 'Aktif', 'frozen' => 'Dibekukan', 'closed' => 'Ditutup'][$row->status] ?? e($row->status);
         }
@@ -95,6 +100,12 @@ class PositionsController extends MasterDataController
             'effective_from' => ['label' => 'Berlaku mulai', 'type' => 'date', 'rules' => ['required', 'date'], 'default' => now()->toDateString(), 'col' => 6],
             'effective_to' => ['label' => 'Berlaku sampai', 'type' => 'date', 'rules' => ['nullable', 'date', 'after_or_equal:effective_from'], 'col' => 6],
             'is_critical' => ['label' => 'Posisi kritis', 'type' => 'checkbox', 'help' => 'Dampak bisnis tinggi × talenta langka; menjadi sasaran succession planning'],
+            // Wajib bila posisi kritis: dasar prioritas suksesi & risiko kekosongan (prasyarat P3 CBHRM)
+            'critical_impact' => ['label' => 'Tingkat dampak posisi kritis', 'type' => 'select', 'options' => self::IMPACTS,
+                'rules' => ['nullable', 'required_if:is_critical,1', 'integer', 'in:1,2,3'], 'col' => 4],
+            'critical_reason' => ['label' => 'Alasan posisi kritis', 'type' => 'textarea',
+                'rules' => ['nullable', 'required_if:is_critical,1', 'max:500'], 'col' => 8,
+                'help' => 'mis. pemegang izin regulator, pendapatan utama, keahlian langka di pasar'],
         ];
     }
 
@@ -155,6 +166,26 @@ class PositionsController extends MasterDataController
         }
 
         $this->recordHistory($id, $before);
+    }
+
+    public function store(Request $request)
+    {
+        return parent::store($this->clearCriticalDetails($request));
+    }
+
+    public function update(Request $request, int $id)
+    {
+        return parent::update($this->clearCriticalDetails($request), $id);
+    }
+
+    /** Posisi tidak kritis: dampak & alasan dikosongkan (bukan ditolak) agar mencabut status kritis cukup satu klik. */
+    private function clearCriticalDetails(Request $request): Request
+    {
+        if (! $request->boolean('is_critical')) {
+            $request->merge(['critical_impact' => null, 'critical_reason' => null]);
+        }
+
+        return $request;
     }
 
     protected function blockDelete(int $id): ?string

@@ -284,6 +284,34 @@ class CompetencyAssessmentTest extends TestCase
         $this->get('/competency/assessments/'.$assessment)->assertOk()->assertSee('71,3%');
     }
 
+    /** Kamus metrik K1–K2: skor kedaluwarsa tidak dihitung; JFI menjadi "data belum cukup", bukan nol. */
+    public function test_skor_kedaluwarsa_dihitung_ulang_menjadi_data_belum_cukup(): void
+    {
+        $assessment = $this->open(['include_self' => 0]);
+        $this->rate($this->manager, $this->raterId($assessment, $this->manager, 'manager'), ['RISK' => 3, 'LEAD' => 2, 'STRAT' => 4, 'DATA' => 2]);
+        $this->actingAsSximo($this->hr, Roles::id(Roles::TENANT_ADMIN))->post('/competency/assessments/'.$assessment.'/close')->assertSessionHasNoErrors();
+
+        // Tanpa perubahan: hitung ulang tidak menambah riwayat
+        $this->artisan('hcms:competency-recalculate', ['--tenant' => 'TA'])->assertExitCode(0);
+        $this->assertSame(1, DB::table('job_fit_history')->where('employee_id', $this->analystEmployee)->count());
+
+        // 25 bulan kemudian semua skor kedaluwarsa (berlaku 24 bulan)
+        $this->travel(25)->months();
+        $this->artisan('hcms:competency-recalculate', ['--tenant' => 'TA'])->assertExitCode(0);
+        $fit = DB::table('job_fit_results')->where('employee_id', $this->analystEmployee)->first();
+        $this->assertSame([null, JobFitCalculator::INSUFFICIENT, '0.00'], [$fit->jfi, $fit->band, $fit->coverage]);
+        $this->assertSame(0, DB::table('competency_gaps')->where('employee_id', $this->analystEmployee)->whereNotNull('gap')->count());
+        $this->assertSame(['assessment', 'recalculation'], DB::table('job_fit_history')->where('employee_id', $this->analystEmployee)->orderBy('id')->pluck('trigger')->all());
+        $this->artisan('hcms:competency-recalculate', ['--tenant' => 'TA'])->assertExitCode(0);
+        $this->assertSame(2, DB::table('job_fit_history')->where('employee_id', $this->analystEmployee)->count());
+
+        $this->actingAsSximo($this->hr, Roles::id(Roles::TENANT_ADMIN));
+        $this->get('/competency/reports/employees/'.$this->analystEmployee)->assertOk()->assertSee('JFI belum dihitung')->assertSee('belum dinilai');
+        $this->get('/competency/reports')->assertOk()->assertSee('Data belum cukup');
+        // Halaman asesmen lama tetap menampilkan JFI miliknya (riwayat P1)
+        $this->get('/competency/assessments/'.$assessment)->assertOk()->assertSee('71,3%');
+    }
+
     public function test_validasi_pembukaan_hak_akses_dan_isolasi(): void
     {
         // Pegawai tanpa profil kompetensi pada posisinya ditolak

@@ -9,6 +9,7 @@ use App\Domain\Employee\Services\EmployeeScope;
 use App\Http\Controllers\Concerns\AuthorizesHcmsModule;
 use App\Http\Controllers\Controller;
 use App\Support\Audit\AuditLog;
+use App\Support\Privacy\SmallGroups;
 use App\Support\Security\DataScope;
 use App\Support\Tenancy\TenantScope;
 use Illuminate\Database\Query\Builder;
@@ -51,6 +52,7 @@ class ReportsController extends Controller
         $key = 'competency-report:'.TenantScope::tenantId().':v'.CompetencyAssessment::reportVersion().':'
             .($scope->isAll() ? 'all' : md5($scope->mode.'|'.$scope->userId.'|'.implode(',', $scope->unitIds))).':u'.($unitId ?? 0);
         $agg = Cache::remember($key, 600, fn () => $this->aggregates($unitId));
+        $mask = app(SmallGroups::class)->masks('competencyreports');
 
         $fits = $this->current('job_fit_results', $unitId)
             ->join('employees', 'employees.id', '=', 'job_fit_results.employee_id')
@@ -70,9 +72,11 @@ class ReportsController extends Controller
             'topGaps' => $agg['topGaps']->take(10),
             'barChart' => [
                 'type' => 'bar', 'labels' => array_values(JobFitCalculator::BAND_LABELS),
-                'values' => $agg['bandCounts']->values()->all(), 'colors' => ['#12b76a', '#f79009', '#d92d20'],
+                'values' => SmallGroups::chartValues($agg['bandCounts']->values()->all(), $mask), 'colors' => ['#12b76a', '#f79009', '#d92d20', '#a3a29b'],
             ],
-            'heatmap' => $agg['heatmap'],
+            // K9: sel heatmap < 5 pegawai tidak diwarnai/diberi nilai bagi pengguna tanpa hak membuka profil individual
+            'heatmap' => $agg['heatmap'] && $mask ? ['data' => array_values(array_map(fn ($d) => SmallGroups::hidden($d[3]) ? [$d[0], $d[1], null, null] : $d, $agg['heatmap']['data']))] + $agg['heatmap'] : $agg['heatmap'],
+            'mask' => $mask,
         ]);
     }
 
@@ -87,7 +91,7 @@ class ReportsController extends Controller
             ->groupBy('competency_gaps.competency_code')
             ->selectRaw('competency_gaps.competency_code as code, MAX(competencies.name) as name, COUNT(*) as employees,
                 SUM(competency_gaps.gap < 0) as below, ROUND(AVG(competency_gaps.gap), 2) as avg_gap,
-                SUM(competency_gaps.criticality = 3 AND competency_gaps.gap < 0) as critical')
+                SUM(competency_gaps.criticality >= '.JobFitCalculator::CRITICAL_WEIGHT.' AND competency_gaps.gap <= '.JobFitCalculator::CRITICAL_GAP.') as critical')
             ->orderByDesc('below')->orderBy('avg_gap')->limit(self::HEATMAP_COLUMNS)->get()
             ->map(function ($g) {
                 foreach (['employees', 'below', 'critical'] as $k) {

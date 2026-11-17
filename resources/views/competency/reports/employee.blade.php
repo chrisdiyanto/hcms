@@ -15,10 +15,11 @@
 			@else
 				<p class="small mb-1">{{ $position->title }} <code>{{ $position->code }}</code></p>
 				<div class="d-flex align-items-baseline gap-2">
-					<span class="h2 mb-0">{{ number_format($fit['jfi'], 1, ',', '.') }}%</span>
-					<span class="badge {{ ['ready_now' => 'bg-success', 'ready_1_2' => 'bg-warning text-dark', 'ready_later' => 'bg-danger'][$fit['band']] }}">{{ $bands[$fit['band']] }}</span>
+					<span class="h2 mb-0">{{ \App\Domain\Competency\Services\JobFitCalculator::format($fit['jfi']) }}</span>
+					<span class="badge {{ ['ready_now' => 'bg-success', 'ready_1_2' => 'bg-warning text-dark', 'ready_later' => 'bg-danger', 'insufficient' => 'bg-secondary'][$fit['band']] }}">{{ $bands[$fit['band']] }}</span>
 				</div>
-				@unless($fit['complete'])<div class="small text-muted">Belum lengkap: ada kompetensi wajib tanpa skor yang berlaku.</div>@endunless
+				@if($fit['jfi'] === null)<div class="small text-muted">Skor berlaku baru mencakup {{ number_format($fit['coverage'], 0, ',', '.') }}% bobot profil (minimal {{ (int) \App\Domain\Competency\Services\JobFitCalculator::MIN_COVERAGE }}%); JFI belum dihitung.</div>
+				@elseif(!$fit['complete'])<div class="small text-muted">Belum lengkap: kompetensi wajib tanpa skor berlaku dihitung 0 (cakupan {{ number_format($fit['coverage'], 0, ',', '.') }}% bobot).</div>@endif
 				@if($radar)<div data-chart="{{ json_encode($radar) }}" style="height:320px" class="mt-2"></div>@endif
 			@endif
 		</div></div>
@@ -39,7 +40,7 @@
 					@foreach($fit['items'] as $i)
 						<tr><td><code>{{ $i['code'] }}</code> {{ $i['name'] }}</td><td class="text-center">{{ $i['weight'] }}</td><td class="text-center">{{ $i['required'] }}</td>
 							<td class="text-center">{{ $i['actual'] === null ? '—' : number_format($i['actual'], 2, ',', '.') }}</td>
-							<td class="text-center fw-bold {{ $i['gap'] < 0 ? 'text-danger' : 'text-success' }}">{{ ($i['gap'] > 0 ? '+' : '').number_format($i['gap'], 2, ',', '.') }}</td></tr>
+							<td class="text-center fw-bold {{ $i['gap'] === null ? 'text-muted' : ($i['gap'] < 0 ? 'text-danger' : 'text-success') }}">@if($i['gap'] === null)<span class="fw-normal small">belum dinilai</span>@else{{ ($i['gap'] > 0 ? '+' : '').number_format($i['gap'], 2, ',', '.') }}@if($i['critical']) <span class="badge bg-danger">gap kritis</span>@endif @endif</td></tr>
 					@endforeach
 					</tbody>
 				</table>
@@ -69,14 +70,14 @@
 				<p class="text-muted small mb-0">Belum ada perhitungan JFI yang tersimpan.</p>
 			@else
 				@if($fitTimeline->count() >= 2)
-					<div data-chart="{{ json_encode(['type' => 'area', 'name' => 'JFI', 'suffix' => '%', 'labels' => $fitTimeline->map(fn ($f) => \Carbon\Carbon::parse($f->computed_at)->format('d/m/y'))->all(), 'values' => $fitTimeline->map(fn ($f) => (float) $f->jfi)->all()]) }}" style="height:200px" role="img" aria-label="Riwayat JFI: {{ $fitTimeline->map(fn ($f) => \Carbon\Carbon::parse($f->computed_at)->format('d/m/Y').' '.$f->jfi.'%')->implode(', ') }}"></div>
+					<div data-chart="{{ json_encode(['type' => 'area', 'name' => 'JFI', 'suffix' => '%', 'labels' => $fitTimeline->map(fn ($f) => \Carbon\Carbon::parse($f->computed_at)->format('d/m/y'))->all(), 'values' => $fitTimeline->map(fn ($f) => $f->jfi === null ? null : (float) $f->jfi)->all()]) }}" style="height:200px" role="img" aria-label="Riwayat JFI: {{ $fitTimeline->map(fn ($f) => \Carbon\Carbon::parse($f->computed_at)->format('d/m/Y').' '.\App\Domain\Competency\Services\JobFitCalculator::format($f->jfi === null ? null : (float) $f->jfi))->implode(', ') }}"></div>
 				@endif
 				<table class="table table-sm small mb-0 mt-2">
 					<thead><tr><th>Tanggal</th><th>Posisi</th><th class="text-end">JFI</th><th>Band</th><th>Sumber</th></tr></thead>
 					<tbody>
 					@foreach($fitTimeline->reverse() as $f)
 						<tr><td>{{ \Carbon\Carbon::parse($f->computed_at)->format('d/m/Y') }}</td><td>{{ $f->position_title }}</td>
-							<td class="text-end">{{ number_format($f->jfi, 1, ',', '.') }}%</td><td>{{ $bands[$f->band] ?? $f->band }}@unless($f->complete) <span class="badge bg-secondary">tidak lengkap</span>@endunless</td>
+							<td class="text-end">{{ \App\Domain\Competency\Services\JobFitCalculator::format($f->jfi) }}</td><td>{{ $bands[$f->band] ?? $f->band }}@unless($f->complete) <span class="badge bg-secondary">tidak lengkap</span>@endunless</td>
 							<td>{{ $f->assessment_title ?? $triggers[$f->trigger] }}</td></tr>
 					@endforeach
 					</tbody>

@@ -21,7 +21,7 @@
 				<div class="small mt-2">
 					@foreach($bands as $k => $l)
 						<a href="{{ url('competency/reports?'.http_build_query(array_filter(['unit' => $unitId, 'band' => $band === $k ? null : $k]))) }}"
-							class="badge text-decoration-none {{ $band === $k ? 'bg-primary' : 'bg-light text-dark' }}">{{ $l }}: {{ $bandCounts[$k] }}</a>
+							class="badge text-decoration-none {{ $band === $k ? 'bg-primary' : 'bg-light text-dark' }}">{{ $l }}: {{ \App\Support\Privacy\SmallGroups::count($bandCounts[$k], $mask) }}</a>
 					@endforeach
 				</div>
 			@else
@@ -35,9 +35,9 @@
 				<thead><tr><th>Kompetensi</th><th class="text-center" title="pegawai di bawah level wajib / dinilai">Kurang</th><th class="text-center">Rata gap</th></tr></thead>
 				<tbody>
 				@forelse($topGaps as $g)
-					<tr><td><code>{{ $g->code }}</code> {{ $g->name }}@if($g->critical) <span class="badge bg-danger" title="pegawai dengan gap pada kompetensi kritis">{{ $g->critical }} kritis</span>@endif</td>
-						<td class="text-center">{{ $g->below }}/{{ $g->employees }}</td>
-						<td class="text-center {{ $g->avg_gap < 0 ? 'text-danger' : 'text-success' }}">{{ number_format($g->avg_gap, 2, ',', '.') }}</td></tr>
+					<tr><td><code>{{ $g->code }}</code> {{ $g->name }}@if($g->critical) <span class="badge bg-danger" title="pegawai dengan gap kritis (kritikalitas 3, gap ≤ −1)">{{ \App\Support\Privacy\SmallGroups::count($g->critical, $mask) }} kritis</span>@endif</td>
+						<td class="text-center">{{ \App\Support\Privacy\SmallGroups::count($g->below, $mask) }}/{{ \App\Support\Privacy\SmallGroups::count($g->employees, $mask) }}</td>
+						<td class="text-center {{ $g->avg_gap < 0 ? 'text-danger' : 'text-success' }}">{{ \App\Support\Privacy\SmallGroups::derived($g->employees, $mask, number_format($g->avg_gap, 2, ',', '.')) }}</td></tr>
 				@empty
 					<tr><td colspan="3" class="text-muted">Belum ada data.</td></tr>
 				@endforelse
@@ -68,8 +68,8 @@
 						<td>{{ $f->full_name }}<div class="small text-muted">{{ $f->employee_number }}</div></td>
 						<td class="small">{{ $f->position_title }}</td>
 						<td class="small">{{ $f->unit_name }}</td>
-						<td class="text-end">{{ number_format($f->jfi, 1, ',', '.') }}%@unless($f->complete)<span class="text-muted" title="belum lengkap">*</span>@endunless</td>
-						<td><span class="badge {{ ['ready_now' => 'bg-success', 'ready_1_2' => 'bg-warning text-dark', 'ready_later' => 'bg-danger'][$f->band] ?? 'bg-secondary' }}">{{ $bands[$f->band] ?? $f->band }}</span></td>
+						<td class="text-end">{{ \App\Domain\Competency\Services\JobFitCalculator::format($f->jfi) }}@unless($f->complete)<span class="text-muted" title="belum lengkap">*</span>@endunless</td>
+						<td><span class="badge {{ ['ready_now' => 'bg-success', 'ready_1_2' => 'bg-warning text-dark', 'ready_later' => 'bg-danger', 'insufficient' => 'bg-secondary'][$f->band] ?? 'bg-secondary' }}">{{ $bands[$f->band] ?? $f->band }}</span></td>
 						<td class="text-end"><a href="{{ url('competency/reports/employees/'.$f->employee_id) }}" class="btn btn-sm btn-outline-primary">Profil</a></td>
 					</tr>
 				@empty

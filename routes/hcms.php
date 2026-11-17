@@ -101,12 +101,14 @@ Route::post('performance/pips/{pip}/close', 'Performance\PipController@close')->
 Route::get('executive/analytic/performance', 'Performance\DashboardController@index');
 Route::redirect('performance/dashboard', '/executive/analytic/performance', 302);
 
-Route::get('competency/reports','Competency\ReportsController@index');
+Route::get('competency/reports', 'Competency\ReportsController@index');
 Route::get('competency/reports/employees/{employee}', 'Competency\ReportsController@employee')->whereNumber('employee');
 
 // Employee Self Service
 Route::get('ess/profile', 'Employee\EssController@profile');
 Route::get('ess/my-data', 'Employee\EssController@download')->middleware('throttle:5,1,my-data');
+Route::get('ess/career', 'Employee\EssController@career');
+Route::post('ess/career', 'Employee\EssController@saveCareer')->middleware('throttle:10,1,ess-career');
 Route::post('ess/change-requests', 'Employee\EssController@submit')->middleware('throttle:10,1,ess');
 
 // Workflow & approval
@@ -121,3 +123,10 @@ Route::post('workflow/delegations/{delegation}/revoke', 'Workflow\DelegationsCon
 Route::get('workflow/definitions', 'Workflow\DefinitionsController@index');
 Route::get('workflow/definitions/{code}/edit', 'Workflow\DefinitionsController@edit')->where('code', '[a-z_]+');
 Route::put('workflow/definitions/{code}', 'Workflow\DefinitionsController@update')->where('code', '[a-z_]+');
+
+// Talent (prasyarat P3 CBHRM): kamus instrumen asesmen potensi berversi
+Route::get('talent/potential-instruments', 'Talent\PotentialInstrumentsController@index');
+Route::post('talent/potential-instruments/draft', 'Talent\PotentialInstrumentsController@createDraft');
+Route::put('talent/potential-instruments/{id}', 'Talent\PotentialInstrumentsController@update')->whereNumber('id');
+Route::post('talent/potential-instruments/{id}/publish', 'Talent\PotentialInstrumentsController@publish')->whereNumber('id');
+Route::delete('talent/potential-instruments/{id}', 'Talent\PotentialInstrumentsController@destroy')->whereNumber('id');

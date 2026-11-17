@@ -2,6 +2,9 @@
 @php
     $items = collect($items)->values();
     $total = (int) $items->sum('value');
+    $mask ??= false;
+    $hide = fn ($n) => $mask && \App\Support\Privacy\SmallGroups::hidden($n);
+    $chartItems = $items->map(fn ($i) => ['value' => $hide($i['value']) ? null : $i['value']] + $i);
 @endphp
 <div class="card exec-card h-100 mb-0"><div class="card-body">
     <div class="exec-section-header">
@@ -10,17 +13,17 @@
     @if($total > 0)
         <div class="exec-donut">
             <div class="exec-donut-chart">
-                <div data-chart="{{ json_encode(['type' => 'donut', 'items' => $items->all()]) }}" style="height: 168px" role="img"
-                    aria-label="{{ $title }}: {{ $items->map(fn ($i) => $i['label'].' '.$i['value'])->implode(', ') }}"></div>
-                <div class="exec-donut-center"><span class="tabular-nums">{{ number_format($total, 0, ',', '.') }}</span><small>{{ $unit }}</small></div>
+                <div data-chart="{{ json_encode(['type' => 'donut', 'items' => $chartItems->all()]) }}" style="height: 168px" role="img"
+                    aria-label="{{ $title }}: {{ $items->map(fn ($i) => $i['label'].' '.\App\Support\Privacy\SmallGroups::count($i['value'], $mask))->implode(', ') }}"></div>
+                <div class="exec-donut-center"><span class="tabular-nums">{{ \App\Support\Privacy\SmallGroups::count($total, $mask) }}</span><small>{{ $unit }}</small></div>
             </div>
             <ul class="exec-legend" aria-label="Legenda {{ $title }}">
                 @foreach($items as $i => $item)
                     <li>
                         <span class="exec-swatch" style="background: var({{ !empty($item['neutral']) ? '--viz-neutral' : '--viz-'.($i % 5 + 1) }})"></span>
                         <span class="exec-legend-label" title="{{ $item['label'] }}">{{ $item['label'] }}</span>
-                        <span class="exec-legend-value tabular-nums">{{ number_format($item['value'], 0, ',', '.') }}</span>
-                        <span class="exec-legend-pct tabular-nums">{{ number_format($item['value'] / $total * 100, 1, ',', '.') }}%</span>
+                        <span class="exec-legend-value tabular-nums">{{ \App\Support\Privacy\SmallGroups::count($item['value'], $mask) }}</span>
+                        <span class="exec-legend-pct tabular-nums">{{ $hide($item['value']) || $hide($total) ? '—' : number_format($item['value'] / $total * 100, 1, ',', '.').'%' }}</span>
                     </li>
                 @endforeach
             </ul>

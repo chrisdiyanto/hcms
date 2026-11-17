@@ -47,7 +47,7 @@ const builders = {
     // gap rata-rata (aktual − wajib) per unit × kompetensi; merah = kurang, hijau = memenuhi
     heatmap: (c) => ({
         tooltip: {
-            formatter: (p) => `${c.rows[p.value[1]]}<br>${c.cols[p.value[0]]}: gap <b>${fmt(p.value[2])}</b><br>${p.value[3]} pegawai`,
+            formatter: (p) => `${c.rows[p.value[1]]}<br>${c.cols[p.value[0]]}: gap <b>${fmt(p.value[2])}</b><br>${p.value[3] ?? '< 5'} pegawai`,
         },
         grid: { left: 8, right: 8, top: 8, bottom: 60, containLabel: true },
         xAxis: { type: 'category', data: c.cols, splitArea: { show: true }, axisLabel: { rotate: 45, fontSize: 11 } },
