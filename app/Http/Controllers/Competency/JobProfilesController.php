@@ -20,6 +20,9 @@ use Illuminate\Validation\Rules\Exists;
  */
 class JobProfilesController extends Controller
 {
+    /** Job dianggap terpetakan bila profilnya punya minimal sekian kompetensi (dan ≥ 1 kritis). */
+    public const MIN_COMPETENCIES = 3;
+
     use AuthorizesHcmsModule;
 
     public function __construct(private CompetencyFramework $framework, private CompetencyProfile $profiles)
@@ -51,10 +54,30 @@ class JobProfilesController extends Controller
                 return $job;
             });
 
+        // Laporan CBHRM 1 & gerbang Fase 2: cakupan pemetaan per job family.
+        // Job terpetakan = ≥ 3 kompetensi dengan ≥ 1 kritis; posisi aktif terpetakan = job-nya punya profil
+        // atau posisi punya kompetensi tambahan (docs/METRIK-CBHRM.md §3).
+        $mappedPositions = TenantScope::table('positions')->whereNull('deleted_at')->where('status', 'active')
+            ->where(fn ($q) => $q->whereExists(fn ($e) => $e->from('job_competencies')->whereColumn('job_competencies.job_id', 'positions.job_id'))
+                ->orWhereExists(fn ($e) => $e->from('position_competencies')->whereColumn('position_competencies.position_id', 'positions.id')->where('position_competencies.is_excluded', false)))
+            ->selectRaw('job_id, COUNT(*) n')->groupBy('job_id')->pluck('n', 'job_id');
+        $activePositions = TenantScope::table('positions')->whereNull('deleted_at')->where('status', 'active')
+            ->selectRaw('job_id, COUNT(*) n')->groupBy('job_id')->pluck('n', 'job_id');
+        $coverage = $jobs->groupBy('family')->map(function ($items) use ($mappedPositions, $activePositions) {
+            $mapped = $items->filter(fn ($j) => $j->competency_count >= self::MIN_COMPETENCIES && $j->critical_count >= 1);
+            $positions = (int) $items->sum(fn ($j) => $activePositions[$j->id] ?? 0);
+            $mappedPos = (int) $items->sum(fn ($j) => $mappedPositions[$j->id] ?? 0);
+
+            return (object) ['jobs' => $items->count(), 'mapped_jobs' => $mapped->count(), 'positions' => $positions, 'mapped_positions' => $mappedPos,
+                'full' => $items->isNotEmpty() && $mapped->count() === $items->count() && $mappedPos === $positions];
+        });
+
         return view('competency.profiles.index', [
             'pageTitle' => 'Profil Kompetensi Job',
             'pageNote' => ($v = $this->framework->published()) ? 'mengacu '.$v->name : 'belum ada kamus yang berlaku',
             'jobs' => $jobs->groupBy('family'),
+            'coverage' => $coverage,
+            'positionTotals' => [(int) $mappedPositions->sum(), (int) $activePositions->sum()],
             'hasFramework' => (bool) $v,
             'access' => $access,
         ]);

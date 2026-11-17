@@ -102,6 +102,7 @@ Route::get('executive/analytic/performance', 'Performance\DashboardController@in
 Route::redirect('performance/dashboard', '/executive/analytic/performance', 302);
 
 Route::get('competency/reports', 'Competency\ReportsController@index');
+Route::get('competency/readiness', 'Competency\ReadinessController@index');
 Route::get('competency/reports/employees/{employee}', 'Competency\ReportsController@employee')->whereNumber('employee');
 
 // Employee Self Service

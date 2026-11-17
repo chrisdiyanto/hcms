@@ -59,7 +59,7 @@ Prasyarat **P4** laporan CBHRM (lihat `TAHAPAN-PEMBANGUNAN-HCMS.md` › Urutan l
 | Gap kritis (K3) | Kompetensi dengan kritikalitas **3** dan gap **≤ −1** (kurang satu level atau lebih). Dipakai Laporan Kompetensi, label "gap kritis" di laporan individu & asesmen, dan snapshot v2. Draf IDP tetap dibuat untuk setiap gap negatif kompetensi kritis (lebih luas). | ✅ `JobFitCalculator::isCriticalGap` |
 | Pegawai dengan gap kritis | Pegawai aktif dengan ≥ 1 gap kritis pada perhitungan JFI terakhir ≤ tanggal acuan. | ✅ (memakai definisi gap kritis yang berlaku) |
 | Cakupan asesmen | Pegawai aktif dengan ≥ 1 skor kompetensi berlaku ÷ headcount × 100. | ✅ snapshot `competency_valid` |
-| Cakupan profil jabatan | Posisi aktif yang profil kompetensinya punya ≥ 1 kompetensi ÷ posisi aktif × 100. | 📌 (laporan 1) |
+| Cakupan profil jabatan | Posisi aktif terpetakan = job-nya punya profil kompetensi atau posisi punya kompetensi tambahan; ÷ posisi aktif × 100. Job terpetakan = profil ≥ 3 kompetensi dengan ≥ 1 kritis. Job family **terpetakan penuh** (gerbang Fase 2) = semua job dan posisi aktifnya terpetakan. | ✅ Profil Kompetensi Job › Cakupan pemetaan |
 
 ---
 
@@ -67,8 +67,8 @@ Prasyarat **P4** laporan CBHRM (lihat `TAHAPAN-PEMBANGUNAN-HCMS.md` › Urutan l
 
 | Metrik | Definisi | Status |
 |---|---|---|
-| Horizon kesiapan kandidat | **Siap sekarang**: band JFI siap sekarang dan **tanpa** gap kritis. **Siap 1–2 tahun**: band siap 1–2 tahun, atau band siap sekarang tetapi ada ≤ 1 gap kritis. **Siap ≥ 3 tahun**: selain itu. Kandidat dengan JFI "data belum cukup" (K1) tidak diberi horizon. | 📌 K4 |
-| Data pendukung | Tanggal dan sumber asesmen, kompetensi wajib terpenuhi atau belum, dan penanda asesmen kedaluwarsa. | 📌 |
+| Horizon kesiapan kandidat | **Siap sekarang**: band JFI siap sekarang dan **tanpa** gap kritis. **Siap 1–2 tahun**: band siap 1–2 tahun, atau band siap sekarang tetapi ada ≤ 1 gap kritis. **Siap ≥ 3 tahun**: selain itu. Kandidat dengan JFI "data belum cukup" (K1) tidak diberi horizon. | ✅ `PositionReadiness::horizon` (Kompetensi › Kesiapan Posisi) |
+| Data pendukung | Tanggal asesmen terakhir, kompetensi wajib terpenuhi (x/y), gap kritis per kode, jumlah skor kedaluwarsa, penanda pemangku posisi. Kandidat = pegawai aktif dalam data scope dengan ≥ 1 skor berlaku pada profil posisi sasaran. Setiap akses daftar tercatat di audit. | ✅ |
 
 Kesiapan adalah bahan pertimbangan, **bukan** rekomendasi atau keputusan penempatan.
 
@@ -177,3 +177,4 @@ Semua keputusan **disetujui pemilik produk pada 2026-11-17** sesuai rekomendasi.
 | 2026-11-17 | Versi awal: definisi yang sudah berlaku di kode dan usulan K1–K9. |
 | 2026-11-17 | K1–K9 dan seluruh usulan disetujui. K1–K3 diterapkan: JFI & gap boleh kosong, kolom `coverage`, band `insufficient`, gap kritis ≤ −1; snapshot `DEFINITIONS_VERSION` = 2 (metrik baru `jfi_insufficient`), snapshot 2025-11 s.d. 2026-10 dibangun ulang; JFI dihitung ulang dengan `hcms:competency-recalculate`. |
 | 2026-11-17 | K9 diperinci: penyamaran hanya bagi pengguna tanpa hak membuka data individual; diterapkan di dashboard executive, Dasbor Kinerja, dan Laporan Kompetensi. |
+| 2026-11-18 | K4 diterapkan di Kesiapan Posisi; definisi cakupan profil jabatan & job family terpetakan penuh ditetapkan. |

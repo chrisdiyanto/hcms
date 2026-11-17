@@ -108,12 +108,16 @@ class PageBenchmarkTest extends TestCase
         $employee = (int) DB::table('employees')->where('employee_number', 'LD005000')->value('id');
         $plan = (int) DB::table('performance_plans')->where('employee_id', $employee)->value('id');
         $periods = DB::table('performance_periods')->pluck('id', 'code');
+        // Posisi dengan profil kompetensi (kandidat = semua pegawai berskor berlaku untuk kompetensinya)
+        $targetPosition = (int) DB::table('positions')->whereIn('job_id', DB::table('job_competencies')->select('job_id'))->orderBy('id')->value('id');
         $this->measure($hr, Roles::id(Roles::TENANT_ADMIN), 'HR (semua data)', [
             '/employees',
             '/employees?q=Rina',
             '/employees/'.$employee,
             '/competency/reports',
             '/competency/reports/employees/'.$employee,
+            '/competency/readiness?position='.$targetPosition,
+            '/competency/job-profiles',
             '/performance/periods/'.$periods['KIN-2026'],
             '/performance/plans/'.$plan.'/monitoring',
             '/executive/analytic/performance?period='.$periods['KIN-2026'],

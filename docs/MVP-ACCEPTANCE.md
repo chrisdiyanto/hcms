@@ -1,6 +1,6 @@
 # Matriks Penerimaan MVP (Blueprint §22)
 
-Status per 2026-11-17 — Fase 4 gelombang 1. Bukti utama adalah tes otomatis (`php vendor/bin/phpunit`, 141 tes lulus) yang berjalan di CI pada setiap push, ditambah uji manual di browser pada tenant DEMO.
+Status per 2026-11-18 — Fase 4 gelombang 3. Bukti utama adalah tes otomatis (`php vendor/bin/phpunit`, 169 tes lulus) yang berjalan di CI pada setiap push, ditambah uji manual di browser pada tenant DEMO. Skrip UAT pengguna bisnis: `UAT-SKRIP.md`.
 
 Legenda: ✅ terpenuhi & teruji otomatis · 🟡 terpenuhi, bukti sebagian/manual · ⏳ belum.
 
@@ -22,7 +22,7 @@ Legenda: ✅ terpenuhi & teruji otomatis · 🟡 terpenuhi, bukti sebagian/manua
 | 14 | HR dapat melakukan kalibrasi dengan alasan dan jejak sebelum/sesudah | ✅ | `PerformanceCycleTest` (alasan wajib, `calibration_adjustments` from/to band & skor); papan drag & drop diuji di browser |
 | 15 | Keberatan dapat diajukan dan diputus **sebelum** pengesahan | ✅ | Alur: umumkan rating sementara → jendela keberatan → putusan (pejabat di atas penilai, SoD) → pengesahan final. `PerformanceCycleTest` menolak pengesahan selama jendela terbuka / keberatan belum diputus, dan menolak keberatan setelah final |
 | 16 | Hasil dapat disahkan; snapshot historis immutable | ✅ | `PerformanceCycleTest` (snapshot dibuat saat final, SHA-256 cocok, UPDATE ditolak trigger) |
-| 17 | Dashboard kinerja menampilkan capaian sesuai data scope | 🟡 | `PerformanceCycleTest` (dasbor sementara & final). Pembatasan data scope memakai `EmployeeScope` yang teruji di `IamTest::test_data_scope_scoped_memakai_penugasan_dan_cakupan_tambahan`; belum ada tes khusus dasbor dengan peran scoped |
+| 17 | Dashboard kinerja menampilkan capaian sesuai data scope | ✅ | `PerformanceDashboardScopeTest::test_hr_melihat_semua_kepala_divisi_hanya_unitnya` (HR 4 pegawai/rata-rata 71,75; Kepala Divisi Kredit hanya 2 pegawai unitnya/rata-rata 85,0, unit lain tidak tampil; pegawai ditolak), `PerformanceCycleTest` (dasbor sementara & final) |
 | 18 | Workflow approval tercatat, termasuk eskalasi saat posisi atasan kosong dan delegasi | ✅ | `WorkflowTest::test_approver_berdasarkan_posisi_kosong_naik_dan_plt`, `test_delegasi_mengalihkan_tugas`, `test_eskalasi_sla_ke_atasan_approver`, `test_pengaju_tidak_pernah_menjadi_approver_sendiri` |
 | 19 | Uji otomatis membuktikan query tanpa tenant context tidak mengembalikan data (pengganti RLS) | ✅ | `TenantContextTest::test_kosong_secara_default_dan_require_gagal`, `TenantIsolationTest::test_tanpa_tenant_context_akses_data_gagal_keras`, `RequestStateIsolationTest` (state antar-request ala Octane) |
 | 20 | Audit trail tersedia | ✅ | `AuditTrailTest::test_audit_logs_append_only_di_database`, `test_jalur_sximo_mencatat_created_updated_deleted_dengan_diff`, `test_kolom_rahasia_tidak_pernah_tersimpan` |
@@ -36,6 +36,7 @@ Legenda: ✅ terpenuhi & teruji otomatis · 🟡 terpenuhi, bukti sebagian/manua
 | `composer audit` / `npm audit` | ✅ | 2026-11-17: tidak ada kerentanan (juga dijalankan di CI) |
 | Review konfigurasi Octane (state bocor antar-request) | ✅ | Cache statis hanya metadata skema & kode peran global; `TenantContext` di-bind `scoped` dan dibersihkan middleware saat terminate; hak akses modul tidak di-cache per instance controller. Setelah deploy migrasi jalankan `php artisan octane:reload` |
 | Hak subjek data (akses & koreksi) | ✅ | Akses: Profil Saya › Unduh data saya (JSON, tercatat) — `DataSubjectAccessTest`. Koreksi: ESS change request — `WorkflowTest::test_ess_disetujui_hr_dan_perubahan_diterapkan_dengan_jejak` |
+| Skrip UAT, materi pelatihan, runbook dry run ×2 & pilot | ✅ | `UAT-SKRIP.md` (skenario per kriteria MVP, peran, hasil, tanda tangan), `PANDUAN-PENGGUNA.md` (6 sesi per peran), `RUNBOOK-PILOT.md` (dry run, rekonsiliasi, go/no-go, rollback, stabilisasi). Pelaksanaannya oleh tim HR/TI di staging |
 | Pentest independen | ⏳ | Diputuskan 2026-11-17: dilakukan pihak ketiga setelah seluruh pengembangan Fase 4 selesai, sebelum pilot |
 | Uji beban 10.000 pegawai / 1.000 pengguna, p95 < 1 detik | 🟡 | Latensi server: 20/20 halaman p95 < 1 dtk pada 10.000 pegawai (`docs/LOAD-TEST.md`). 1.000 pengguna bersamaan: skrip k6 siap, dijalankan di staging (Octane + OPcache) |
 | 2× dry run migrasi + rekonsiliasi | ⏳ | `hcms:import` siap (validasi kering, rekonsiliasi); dijalankan dengan data klien pilot |

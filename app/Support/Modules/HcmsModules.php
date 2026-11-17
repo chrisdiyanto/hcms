@@ -85,6 +85,8 @@ final class HcmsModules
                 'access' => $hrManage + [Roles::ASSESSOR => self::FULL]],
             'competencyreports' => ['title' => 'Laporan Kompetensi', 'table' => 'job_fit_results', 'url' => 'competency/reports', 'parent' => 'kompetensi', 'icon' => 'fa fa-chart-bar', 'title_id' => 'Laporan Kompetensi',
                 'access' => $hrManage + $orgRead + [Roles::LINE_MANAGER => self::READ, Roles::ASSESSOR => self::READ]],
+            'positionreadiness' => ['title' => 'Kesiapan Posisi', 'table' => 'job_fit_results', 'url' => 'competency/readiness', 'parent' => 'kompetensi', 'icon' => 'fa fa-chess-knight', 'title_id' => 'Kesiapan Posisi',
+                'access' => $hrManage + [Roles::HRBP => self::READ, Roles::EXECUTIVE => self::READ, Roles::DEPARTMENT_HEAD => self::READ, Roles::TALENT_COMMITTEE => self::READ]],
             // Performance Management
             'perfpolicies' => ['title' => 'Kebijakan Kinerja', 'table' => 'performance_policies', 'url' => 'performance/policies', 'parent' => 'kinerja', 'icon' => 'fa fa-balance-scale', 'title_id' => 'Kebijakan Kinerja',
                 'access' => $hrManage + [Roles::AUDITOR => self::READ, Roles::HRBP => self::READ]],

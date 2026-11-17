@@ -9,6 +9,25 @@
 	<div class="alert alert-warning">Belum ada kamus kompetensi yang berlaku. Terbitkan kamus di menu <a href="{{ url('competency/framework') }}">Kamus Kompetensi</a> lebih dulu.</div>
 @endunless
 
+@if($jobs->isNotEmpty())
+	<div class="card"><div class="card-body">
+		<div class="d-flex flex-wrap justify-content-between align-items-baseline gap-2">
+			<h5 class="card-title mb-1">Cakupan pemetaan</h5>
+			<span class="small text-muted">Posisi aktif terpetakan: <strong>{{ $positionTotals[0] }}/{{ $positionTotals[1] }}</strong>@if($positionTotals[1]) ({{ number_format($positionTotals[0] / $positionTotals[1] * 100, 1, ',', '.') }}%)@endif</span>
+		</div>
+		<p class="small text-muted">Job terpetakan = profil berisi ≥ {{ \App\Http\Controllers\Competency\JobProfilesController::MIN_COMPETENCIES }} kompetensi dengan ≥ 1 kompetensi kritis. Job family terpetakan penuh bila semua job dan posisi aktifnya terpetakan (gerbang keluar Fase 2).</p>
+		<div class="table-responsive"><table class="table table-sm mb-0">
+			<thead><tr><th>Job family</th><th class="text-end">Job terpetakan</th><th class="text-end">Posisi aktif terpetakan</th><th>Status</th></tr></thead>
+			<tbody>
+			@foreach($coverage as $family => $c)
+				<tr><td>{{ $family ?: 'Tanpa job family' }}</td><td class="text-end">{{ $c->mapped_jobs }}/{{ $c->jobs }}</td><td class="text-end">{{ $c->mapped_positions }}/{{ $c->positions }}</td>
+					<td>@if($c->full)<span class="badge bg-success">Terpetakan penuh</span>@else<span class="badge bg-warning text-dark">Belum lengkap</span>@endif</td></tr>
+			@endforeach
+			</tbody>
+		</table></div>
+	</div></div>
+@endif
+
 @forelse($jobs as $family => $items)
 	<div class="card"><div class="card-body">
 		<h5 class="card-title">{{ $family ?: 'Tanpa job family' }}</h5>

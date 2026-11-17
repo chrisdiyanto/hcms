@@ -5,6 +5,7 @@ namespace Tests\Feature\Competency;
 use App\Domain\Competency\Services\CompetencyFramework;
 use App\Domain\Competency\Services\CompetencyHistory;
 use App\Domain\Competency\Services\JobFitCalculator;
+use App\Domain\Competency\Services\PositionReadiness;
 use App\Support\Security\Roles;
 use App\User;
 use Illuminate\Database\QueryException;
@@ -310,6 +311,58 @@ class CompetencyAssessmentTest extends TestCase
         $this->get('/competency/reports')->assertOk()->assertSee('Data belum cukup');
         // Halaman asesmen lama tetap menampilkan JFI miliknya (riwayat P1)
         $this->get('/competency/assessments/'.$assessment)->assertOk()->assertSee('71,3%');
+    }
+
+    /** Laporan CBHRM 4 — Kesiapan Posisi dengan horizon K4. */
+    public function test_kesiapan_posisi_mengurutkan_kandidat_per_horizon(): void
+    {
+        $this->assertSame(['now', '1_2', '3_plus', '1_2', '3_plus', null], [
+            PositionReadiness::horizon('ready_now', 0), PositionReadiness::horizon('ready_now', 1), PositionReadiness::horizon('ready_now', 2),
+            PositionReadiness::horizon('ready_1_2', 3), PositionReadiness::horizon('ready_later', 0), PositionReadiness::horizon('insufficient', 0)]);
+
+        // Rina: JFI 71,3% dengan gap kritis RISK & LEAD → siap ≥ 3 tahun
+        $assessment = $this->open(['include_self' => 0]);
+        $this->rate($this->manager, $this->raterId($assessment, $this->manager, 'manager'), ['RISK' => 3, 'LEAD' => 2, 'STRAT' => 4, 'DATA' => 2]);
+        $this->actingAsSximo($this->hr, Roles::id(Roles::TENANT_ADMIN))->post('/competency/assessments/'.$assessment.'/close')->assertSessionHasNoErrors();
+        // Dua kandidat lain dari unit yang sama (skor langsung, asesmen yang sama sebagai sumber)
+        $candidate = function (string $name, array $scores) use ($assessment) {
+            $user = $this->makeUser($this->tenant, Roles::id(Roles::EMPLOYEE));
+            $id = $this->employee($user, 'MGR', $name);
+            foreach ($scores as $code => $score) {
+                DB::table('employee_competencies')->insert(['tenant_id' => $this->tenant, 'employee_id' => $id, 'competency_code' => $code, 'competency_id' => $this->competencies[$code],
+                    'score' => $score, 'source' => 'raters', 'assessment_id' => $assessment, 'assessed_at' => now()->toDateString(), 'valid_until' => now()->addYear()->toDateString(), 'created_at' => now()]);
+            }
+        };
+        $candidate('Siti Siap', ['RISK' => 4, 'LEAD' => 4, 'STRAT' => 4, 'DATA' => 3]);
+        $candidate('Dodi Hampir', ['RISK' => 4, 'LEAD' => 3, 'STRAT' => 4, 'DATA' => 3]); // JFI 91,7%, 1 gap kritis (LEAD)
+
+        $this->get('/competency/readiness')->assertOk()->assertSee('Pilih posisi sasaran');
+        $response = $this->get('/competency/readiness?position='.$this->positions['ANL'])->assertOk()
+            ->assertSeeInOrder(['Siti Siap', 'Siap sekarang', 'Dodi Hampir', 'Siap 1–2 tahun', 'Rina Analis', 'Siap ≥ 3 tahun'])
+            ->assertSee('100,0%')->assertSee('91,7%')->assertSee('71,3%')->assertSee('pemangku');
+        $this->assertSame(['LEAD', 'RISK'], $response->viewData('candidates')->firstWhere('full_name', 'Rina Analis')->critical_gaps);
+        $this->get('/competency/readiness?position='.$this->positions['ANL'].'&horizon=1_2')->assertOk()->assertSee('Dodi Hampir')->assertDontSee('Siti Siap');
+        $this->assertTrue(DB::table('audit_logs')->where('auditable_type', 'positions')->where('event', 'sensitive_viewed')->exists());
+
+        // Skor kedaluwarsa: tidak ada kandidat berskor berlaku
+        $this->travel(25)->months();
+        $this->get('/competency/readiness?position='.$this->positions['ANL'])->assertOk()->assertSee('Belum ada kandidat');
+
+        $this->actingAsSximo($this->analyst, Roles::id(Roles::EMPLOYEE))->get('/competency/readiness')->assertRedirect('dashboard');
+    }
+
+    /** Gerbang Fase 2 / laporan CBHRM 1: cakupan pemetaan profil per job family. */
+    public function test_cakupan_pemetaan_job_family(): void
+    {
+        $this->get('/competency/job-profiles')->assertOk()->assertSee('Cakupan pemetaan')
+            ->assertSeeInOrder(['Risk', '1/1', '2/2', 'Terpetakan penuh'])->assertSee('Posisi aktif terpetakan: <strong>2/2</strong>', false);
+
+        // Job baru di family yang sama tanpa profil → family belum lengkap
+        $family = (int) DB::table('jobs_catalog')->where('id', $this->job)->value('job_family_id');
+        $job = $this->insert('jobs_catalog', ['code' => 'RISK-MGR', 'title' => 'Risk Manager', 'job_family_id' => $family]);
+        $this->insert('positions', ['code' => 'RMG', 'title' => 'Risk Manager', 'company_id' => $this->company, 'unit_id' => $this->unit,
+            'job_id' => $job, 'status' => 'active', 'headcount' => 1, 'effective_from' => '2020-01-01']);
+        $this->get('/competency/job-profiles')->assertOk()->assertSeeInOrder(['Risk', '1/2', '2/3', 'Belum lengkap']);
     }
 
     public function test_validasi_pembukaan_hak_akses_dan_isolasi(): void
