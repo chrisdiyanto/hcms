@@ -99,6 +99,8 @@ Kebijakan berversi → buka periode (kebijakan terkunci) → sasaran strategis �
 3. **Talent Review**: buat review (periode kinerja yang sudah ditutup, unit, panel ≥ 2 orang). Peserta dan usulan kotak terisi otomatis; lengkapi potensi yang belum ada lalu klik *Perbarui data*.
 4. Panel menggeser kotak bila perlu (justifikasi wajib), menilai **risiko kehilangan** (rahasia, alasan wajib), dan menetapkan tindakan pengembangan.
 5. Pengesahan oleh pemegang izin Approve selain pembuat review. Setelah sah, review terkunci.
+7. **Talent Pool**: buat pool (tujuan, sasaran, kriteria masuk/keluar, siklus tinjau). Nominasikan talenta kunci dari talent review atau secara manual dengan alasan. Peninjau lain menyetujui dengan menetapkan kesiapan, atau menolak dengan alasan. Tinjau ulang anggota sesuai jadwal; keluarkan dengan alasan bila kriteria keluar terpenuhi. **Laporan Talent Pool** menampilkan komposisi, kesiapan, keselarasan aspirasi, dan cakupan IDP tanpa nama.
+8. **Rencana Suksesi**: untuk setiap posisi kritis, tambahkan suksesor utama/cadangan (usulan dari Kesiapan Posisi dan talent pool), tetapkan kesiapan, alasan, dan tindakan pengembangan. Setiap perubahan mengembalikan rencana ke draft; pengesahan oleh peninjau lain. **Laporan Suksesi** menampilkan cakupan, bench strength, dan posisi berisiko.
 6. **Laporan Nine Box**: sebaran agregat, per unit, pergerakan antar-siklus, keragaman. Penempatan di Nine Box bukan jaminan promosi.
 
 ## Sesi 5 — Eksekutif & analitik

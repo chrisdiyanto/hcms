@@ -139,9 +139,11 @@ Kesiapan adalah bahan pertimbangan, **bukan** rekomendasi atau keputusan penempa
 
 | Metrik | Definisi | Status |
 |---|---|---|
-| Anggota aktif | Nominasi yang disetujui, belum keluar, dan tanggal tinjau ulang belum lewat. | 📌 |
-| Kesiapan pool | Distribusi horizon kesiapan anggota terhadap posisi atau rumpun sasaran (definisi K4). | 📌 |
-| Keselarasan aspirasi | Anggota yang aspirasi kariernya (P3) cocok dengan rumpun sasaran pool ÷ anggota. | 📌 |
+| Anggota aktif | Nominasi yang disetujui dan belum keluar. Keanggotaan yang tanggal tinjau ulangnya lewat tetap aktif tetapi ditandai **tinjau lewat jadwal**. | ✅ `TalentPools` |
+| Kesiapan pool | Distribusi kesiapan anggota (siap sekarang / 1–2 tahun / ≥ 3 tahun, K4) yang **ditetapkan** saat persetujuan atau tinjau ulang; bila pool punya posisi sasaran, horizon terhitung (Kesiapan Posisi) ditampilkan sebagai pembanding. | ✅ Laporan Talent Pool |
+| Keselarasan aspirasi | Anggota aktif yang aspirasi karier terkininya (rumpun sasaran, atau rumpun jabatan sasaran) sama dengan rumpun sasaran pool ÷ anggota aktif. | ✅ Laporan Talent Pool |
+| Cakupan IDP anggota | Anggota aktif dengan IDP tahun berjalan berstatus berjalan/selesai ÷ anggota aktif. | ✅ Laporan Talent Pool |
+| Pergerakan pool | Masuk = keputusan disetujui; keluar = dikeluarkan, dihitung dari riwayat status (`talent_pool_events`) pada tahun laporan. | ✅ Laporan Talent Pool |
 
 ---
 
@@ -149,10 +151,11 @@ Kesiapan adalah bahan pertimbangan, **bukan** rekomendasi atau keputusan penempa
 
 | Metrik | Definisi | Status |
 |---|---|---|
-| Cakupan suksesi | Posisi kritis dengan ≥ 1 suksesor **siap sekarang** ÷ posisi kritis aktif × 100. | 📌 K8 |
-| Bench strength | Rata-rata jumlah suksesor siap sekarang atau siap 1–2 tahun per posisi kritis. | 📌 K8 |
-| Posisi berisiko | Posisi kritis berdampak **sangat tinggi** tanpa suksesor siap sekarang, atau yang pemangkunya akan pensiun atau habis kontraknya ≤ 12 bulan. | 📌 K8 |
-| Kandidat ganda | Kandidat yang tercatat sebagai suksesor utama di > 1 posisi kritis. | 📌 |
+| Cakupan suksesi | Posisi kritis dengan ≥ 1 suksesor **siap sekarang** ÷ posisi kritis aktif × 100. | ✅ `Succession` (Rencana & Laporan Suksesi) |
+| Bench strength | Rata-rata jumlah suksesor siap sekarang atau siap 1–2 tahun per posisi kritis. | ✅ `Succession` (Rencana & Laporan Suksesi) |
+| Posisi berisiko | Posisi kritis berdampak **sangat tinggi** tanpa suksesor siap sekarang, atau dengan risiko kekosongan ≤ 12 bulan: tanpa pemangku, pemangku mencapai usia pensiun (pengaturan tenant `talent.retirement_age`, bawaan 59 tahun mengikuti jadwal PP 45/2015 untuk 2025–2027), atau kontrak PKWT pemangku berakhir. | ✅ `Succession::criticalPositions` |
+| Kandidat ganda | Kandidat yang tercatat sebagai suksesor utama di > 1 posisi kritis. | ✅ `Succession` (Rencana & Laporan Suksesi) |
+| Dasar perhitungan | Hanya rencana suksesi yang **disahkan**; rencana draft (termasuk yang kembali draft karena perubahan kandidat) tidak dihitung. | ✅ |
 
 ---
 
@@ -185,3 +188,5 @@ Semua keputusan **disetujui pemilik produk pada 2026-11-17** sesuai rekomendasi.
 | 2026-11-18 | §6 IDP diterapkan (Rilis 2 gelombang 2): kemajuan, lewat tenggat, gap tertutup dari gap terkini. |
 | 2026-11-18 | §7 pelatihan & efektivitas diterapkan (Rilis 2 gelombang 3); aturan indikasi program ditambahkan dengan ambang awal. |
 | 2026-11-18 | §9 diterapkan (Talent gelombang 1): nama kotak, kelompok laporan, pergerakan, keragaman; pemetaan band kustom. |
+| 2026-11-18 | §10 diterapkan (Talent gelombang 2): kesiapan ditetapkan + pembanding terhitung, cakupan IDP, pergerakan pool. |
+| 2026-11-18 | §11 diterapkan (Talent gelombang 3); usia pensiun sebagai pengaturan tenant, bawaan 59. |

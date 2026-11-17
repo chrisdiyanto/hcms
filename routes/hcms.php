@@ -177,3 +177,20 @@ Route::post('talent/reviews/{id}/populate', 'Talent\ReviewsController@populate')
 Route::post('talent/reviews/{id}/approve', 'Talent\ReviewsController@approve')->whereNumber('id');
 Route::put('talent/reviews/entries/{entry}', 'Talent\ReviewsController@decide')->whereNumber('entry');
 Route::get('talent/nine-box', 'Talent\NineBoxController@index');
+
+// Talent gelombang 2 (laporan 10): talent pool
+Route::get('talent/pools', 'Talent\PoolsController@index');
+Route::get('talent/pools/report', 'Talent\PoolReportController@index');
+Route::post('talent/pools', 'Talent\PoolsController@store');
+Route::get('talent/pools/{id}', 'Talent\PoolsController@show')->whereNumber('id');
+Route::post('talent/pools/{id}/nominate', 'Talent\PoolsController@nominate')->whereNumber('id');
+Route::post('talent/pools/{id}/decide', 'Talent\PoolsController@decide')->whereNumber('id');
+Route::put('talent/pools/members/{member}', 'Talent\PoolsController@member')->whereNumber('member');
+
+// Talent gelombang 3 (laporan 11): suksesi & bench strength
+Route::get('talent/succession', 'Talent\SuccessionController@index');
+Route::get('talent/succession/report', 'Talent\SuccessionReportController@index');
+Route::get('talent/succession/{position}', 'Talent\SuccessionController@show')->whereNumber('position');
+Route::post('talent/succession/{position}/candidates', 'Talent\SuccessionController@addCandidate')->whereNumber('position');
+Route::post('talent/succession/{position}/approve', 'Talent\SuccessionController@approve')->whereNumber('position');
+Route::put('talent/succession/candidates/{candidate}', 'Talent\SuccessionController@updateCandidate')->whereNumber('candidate');

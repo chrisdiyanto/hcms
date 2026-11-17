@@ -143,6 +143,11 @@ final class HcmsModules
                 'access' => $hrManage + [Roles::TALENT_COMMITTEE => self::FULL]],
             'talentpoolreport' => ['title' => 'Laporan Talent Pool', 'table' => 'talent_pool_members', 'url' => 'talent/pools/report', 'parent' => 'talenta', 'icon' => 'fa fa-chart-pie', 'title_id' => 'Laporan Talent Pool',
                 'access' => $hrManage + [Roles::TALENT_COMMITTEE => self::READ, Roles::EXECUTIVE => self::READ, Roles::HRBP => self::READ, Roles::DEPARTMENT_HEAD => self::READ]],
+            // Talent gelombang 3 (laporan 11): suksesi & bench strength
+            'succession' => ['title' => 'Rencana Suksesi', 'table' => 'succession_plans', 'url' => 'talent/succession', 'parent' => 'talenta', 'icon' => 'fa fa-chess-king', 'title_id' => 'Rencana Suksesi',
+                'access' => $hrManage + [Roles::TALENT_COMMITTEE => self::FULL]],
+            'successionreport' => ['title' => 'Laporan Suksesi', 'table' => 'succession_plans', 'url' => 'talent/succession/report', 'parent' => 'talenta', 'icon' => 'fa fa-shield-alt', 'title_id' => 'Laporan Suksesi',
+                'access' => $hrManage + [Roles::TALENT_COMMITTEE => self::READ, Roles::EXECUTIVE => self::READ, Roles::HRBP => self::READ, Roles::DEPARTMENT_HEAD => self::READ]],
             'nineboxreport' => ['title' => 'Laporan Nine Box', 'table' => 'talent_review_entries', 'url' => 'talent/nine-box', 'parent' => 'talenta', 'icon' => 'fa fa-table', 'title_id' => 'Laporan Nine Box',
                 'access' => $hrManage + [Roles::TALENT_COMMITTEE => self::READ, Roles::EXECUTIVE => self::READ, Roles::HRBP => self::READ, Roles::DEPARTMENT_HEAD => self::READ]],
             'myassessments' => ['title' => 'Asesmen Saya', 'table' => 'assessment_raters', 'url' => 'competency/my-assessments', 'parent' => 'layanan', 'icon' => 'fa fa-star', 'title_id' => 'Asesmen Saya',
