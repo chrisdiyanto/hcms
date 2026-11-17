@@ -22,7 +22,7 @@ php artisan config:cache && php artisan route:cache && php artisan view:cache
 
 - Jangan jalankan `DemoDataSeeder` atau `hcms:load-seed` di database pilot/produksi (DemoDataSeeder menolak berjalan di produksi).
 - Jalankan PHPUnit hanya di lingkungan dev/CI, **bukan** saat config ter-cache.
-- Penjadwal: cron `* * * * * php artisan schedule:run` (terminasi 00.15, eskalasi tiap jam, hitung ulang JFI Minggu 02.00, snapshot tanggal 1 pukul 01.30).
+- Penjadwal: cron `* * * * * php artisan schedule:run` (terminasi 00.15, eskalasi tiap jam, hitung ulang JFI Minggu 02.00, saran TNA Minggu 03.00, snapshot tanggal 1 pukul 01.30).
 - Antrean: `php artisan queue:work` (atau Horizon) sebagai layanan.
 - Ulangi `config:cache` setiap `.env` berubah. Bila memakai Octane: `php artisan octane:reload` setelah deploy/migrasi.
 

@@ -221,6 +221,8 @@ Urutan disarankan: Offboarding & ER lengkap → Learning & Development → Talen
 - Evaluasi efektivitas pelatihan empat tingkat: reaksi, pembelajaran, penerapan perilaku/kompetensi, dan dampak kinerja/organisasi; simpan baseline dan tindak lanjut agar hasil dapat dibandingkan.
 - Laporan: TNA menurut sumber/prioritas/unit/kompetensi; gap vs intervensi terencana; biaya dan realisasi pelatihan; partisipasi/sertifikasi; evaluasi efektivitas; kemajuan IDP. Tampilkan kebutuhan belum ditindaklanjuti dan hindari menyamakan saran IDP dengan TNA yang disetujui.
 
+**Status 2026-11-18 — gelombang 1 (TNA) selesai (173 tes lulus):** menu baru **Pengembangan** › Kebutuhan Pelatihan & Laporan TNA, serta Layanan Mandiri › Usulan Pelatihan. Tabel `training_needs` (pegawai × kompetensi/topik × tahun; sumber gap / kinerja-PIP / organisasi / permintaan; status saran otomatis → diajukan → disetujui/ditolak → direncanakan → selesai). Saran otomatis dari gap kompetensi ≤ −1 pada posisi primer saat ini dan dari PIP berjalan (`hcms:tna-suggest`, Minggu 03.00, idempoten; saran usang dihapus, yang sudah ditinjau tidak disentuh); saran tidak dihitung sebagai TNA. Pegawai mengusulkan untuk dirinya, atasan untuk bawahan langsung; HR mengajukan kebutuhan organisasi per pegawai atau seluruh unit. Tinjauan HR (izin Approve, massal, alasan wajib saat menolak; **pengaju tidak dapat memutus pengajuannya sendiri**). Prioritas K5 otomatis bila ada gap (×1,5 bila terkait sasaran strategis), PIP selalu tinggi. Laporan TNA: kebutuhan disetujui menurut sumber, prioritas, kompetensi/topik, dan unit; kebutuhan terbuka & berulang; perkiraan biaya; penyamaran kelompok kecil. Uji beban: 7.010 saran dari 10.000 pegawai dalam 8 dtk; daftar 283 ms, laporan 96 ms. **Berikutnya (gelombang 2):** katalog intervensi & IDP (status `planned` diisi dari IDP), lalu pelaksanaan pelatihan & evaluasi empat tingkat.
+
 #### Talent — asesmen potensi dan talent pool
 - Definisikan kriteria potensi dan instrumen asesmen berversi, terpisah dari rating kinerja dan asesmen kompetensi; catat bukti, assessor, tanggal, dan tingkat keyakinan.
 - Jalankan talent review per siklus dengan panel, catatan/justifikasi, kalibrasi, persetujuan, dan riwayat perubahan. Terapkan akses terbatas karena data potensi bersifat sensitif.
@@ -249,7 +251,7 @@ Urutan berikut mengikuti ketergantungan data. Setiap laporan harus mendukung fil
 | 2 | Profil & asesmen pegawai | 🟡 sebagian | Laporan Kompetensi › profil individu (radar, riwayat asesmen); riwayat skor per kompetensi belum tersimpan (lihat prasyarat P1) |
 | 3 | Competency Gap Analysis | 🟡 sebagian | Sebaran band, gap terbesar, heatmap unit × kompetensi; tren gap belum (P1) |
 | 4 | Position Readiness | 🟡 sebagian | Fungsi `fitFor` ada; laporan per posisi sasaran masih backlog Fase 2 |
-| 5–7 | TNA, IDP, pelatihan & efektivitas | ⬜ belum | Hanya `competency_idp_suggestions` (draf saran IDP) |
+| 5–7 | TNA, IDP, pelatihan & efektivitas | 🟡 sebagian | **TNA (5) ✅** sejak 2026-11-18: saran otomatis, usulan pegawai/atasan, kebutuhan organisasi, tinjauan HR, Laporan TNA. IDP (6) dan pelatihan & efektivitas (7) belum |
 | 8 | Performance Management | ✅ ada | Dasbor Kinerja (`executive/analytic/performance`), rating final/sementara, kalibrasi, keberatan, PIP |
 | 9–11 | Talent review/Nine Box, talent pool, suksesi | ⬜ belum | Butuh instrumen potensi, penanda posisi kritis, aspirasi karier (P3) |
 | 12 | People Analytics | 🟡 kerangka | Dashboard Executive (ringkasan, turnover, mobilitas, DEIB, demografi, pengembangan) menjadi wadahnya |

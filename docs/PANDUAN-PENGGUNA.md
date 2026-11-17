@@ -37,6 +37,9 @@ Materi pelatihan Fase 4 gelombang 3, disusun per peran. Setiap sesi berisi **tuj
 **Layanan Mandiri › Aspirasi Karier Saya**
 - Isi rumpun/jabatan yang diminati, jangka waktu, kesediaan pindah lokasi, dan kebutuhan pengembangan. Ini bahan pembicaraan karier dengan atasan, bukan pengajuan mutasi.
 
+**Layanan Mandiri › Usulan Pelatihan**
+- Usulkan kebutuhan pelatihan untuk diri sendiri (atau bawahan langsung bila Anda atasan): kompetensi atau topik, alasan, urgensi. HR meninjau; status dan catatan HR tampil di halaman yang sama.
+
 **Layanan Mandiri › Tugas Persetujuan & Delegasi**
 - Persetujuan yang menunggu Anda muncul di Tugas Persetujuan. Saat cuti, delegasikan persetujuan ke rekan untuk periode tertentu.
 
@@ -68,6 +71,12 @@ Materi pelatihan Fase 4 gelombang 3, disusun per peran. Setiap sesi berisi **tuj
 4. Membaca hasil: JFI ≥ 90% siap sekarang, 75–89% siap 1–2 tahun, < 75% siap > 2 tahun. Bila skor berlaku < 80% bobot profil, JFI "Data belum cukup". Skor berlaku 24 bulan; JFI dihitung ulang otomatis setiap Minggu.
 5. Kesiapan Posisi: pilih posisi sasaran untuk membandingkan kandidat internal. Hasilnya bahan pertimbangan, bukan keputusan penempatan.
 
+**Pengembangan › Kebutuhan Pelatihan (TNA)**
+1. Tab *Saran otomatis*: saran dari gap kompetensi ≤ −1 dan PIP (diperbarui tiap Minggu atau tombol *Perbarui saran*). Setujui atau tolak (alasan wajib) — saran belum dihitung sebagai TNA.
+2. Tab *Diajukan*: usulan pegawai/atasan dan kebutuhan organisasi. Anda tidak dapat memutus kebutuhan yang Anda ajukan sendiri.
+3. *Rincian*: kaitkan dengan sasaran strategis (skor prioritas ×1,5), isi intervensi, biaya, tenggat, penanggung jawab.
+4. *Laporan TNA*: kebutuhan disetujui per sumber, prioritas, kompetensi, unit; kebutuhan terbuka & berulang; perkiraan biaya.
+
 **Kinerja (urutan tahap)**
 Kebijakan berversi → buka periode (kebijakan terkunci) → sasaran strategis → perencanaan → monitoring (mid-year wajib) → penilaian → kalibrasi per unit (alasan wajib) → umumkan rating sementara → keberatan → pengesahan final (snapshot tidak dapat diubah) → PIP. Ekspor rating dari halaman periode.
 
@@ -94,4 +103,5 @@ Kebijakan berversi → buka periode (kebijakan terkunci) → sasaran strategis �
 | Setiap hari 00.15 | Terminasi terjadwal yang jatuh tempo diproses |
 | Setiap jam | Eskalasi tugas persetujuan yang melewati SLA |
 | Minggu 02.00 | Hitung ulang JFI dari skor kompetensi yang masih berlaku |
+| Minggu 03.00 | Perbarui saran kebutuhan pelatihan (TNA) |
 | Tanggal 1 pukul 01.30 | Snapshot analitik bulan sebelumnya |

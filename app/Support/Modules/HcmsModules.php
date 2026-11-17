@@ -27,6 +27,7 @@ final class HcmsModules
         'organisasi' => ['name' => 'Organisasi', 'id' => 'Organisasi', 'icon' => 'fa fa-sitemap', 'position' => 'sidebar'],
         'kompetensi' => ['name' => 'Kompetensi', 'id' => 'Kompetensi', 'icon' => 'fa fa-medal', 'position' => 'sidebar'],
         'kinerja' => ['name' => 'Kinerja', 'id' => 'Kinerja', 'icon' => 'fa fa-bullseye', 'position' => 'sidebar'],
+        'pengembangan' => ['name' => 'Pengembangan', 'id' => 'Pengembangan', 'icon' => 'fa fa-graduation-cap', 'position' => 'sidebar'],
         'talenta' => ['name' => 'Talenta', 'id' => 'Talenta', 'icon' => 'fa fa-gem', 'position' => 'sidebar'],
     ];
 
@@ -105,6 +106,13 @@ final class HcmsModules
             'perfpips' => ['title' => 'Rencana Perbaikan (PIP)', 'table' => 'performance_improvement_plans', 'url' => 'performance/pips', 'parent' => 'layanan', 'icon' => 'fa fa-life-ring', 'title_id' => 'Rencana Perbaikan (PIP)',
                 'access' => self::everyone(), 'register_module' => false],
             'myteamperformance' => ['title' => 'Kinerja Tim Saya', 'table' => 'performance_plans', 'url' => 'performance/team', 'parent' => 'layanan', 'icon' => 'fa fa-users-cog', 'title_id' => 'Kinerja Tim Saya',
+                'access' => self::everyone(), 'register_module' => false],
+            // Learning & Development (Rilis 2 gelombang 1): Training Need Analysis
+            'trainingneeds' => ['title' => 'Kebutuhan Pelatihan', 'table' => 'training_needs', 'url' => 'development/needs', 'parent' => 'pengembangan', 'icon' => 'fa fa-lightbulb', 'title_id' => 'Kebutuhan Pelatihan (TNA)',
+                'access' => $hrManage + [Roles::TRAINING_ADMIN => self::FULL, Roles::HRBP => self::READ, Roles::DEPARTMENT_HEAD => self::READ, Roles::AUDITOR => self::READ]],
+            'tnareport' => ['title' => 'Laporan TNA', 'table' => 'training_needs', 'url' => 'development/needs/report', 'parent' => 'pengembangan', 'icon' => 'fa fa-chart-area', 'title_id' => 'Laporan TNA',
+                'access' => $hrManage + $orgRead + [Roles::TRAINING_ADMIN => self::READ]],
+            'mytrainingrequests' => ['title' => 'Usulan Pelatihan', 'table' => 'training_needs', 'url' => 'ess/training-requests', 'parent' => 'layanan', 'icon' => 'fa fa-hand-paper', 'title_id' => 'Usulan Pelatihan',
                 'access' => self::everyone(), 'register_module' => false],
             'mycareer' => ['title' => 'Aspirasi Karier Saya', 'table' => 'employee_career_aspirations', 'url' => 'ess/career', 'parent' => 'layanan', 'icon' => 'fa fa-compass', 'title_id' => 'Aspirasi Karier Saya',
                 'access' => self::everyone(), 'register_module' => false],

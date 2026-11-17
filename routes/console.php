@@ -5,6 +5,7 @@ use App\Domain\Competency\Services\CompetencyAssessment;
 use App\Domain\DataImport\CsvReader;
 use App\Domain\DataImport\ImportRegistry;
 use App\Domain\DataImport\ImportRunner;
+use App\Domain\Development\TrainingNeeds;
 use App\Domain\Employee\Actions\TerminateEmployee;
 use App\Domain\Workflow\WorkflowEngine;
 use App\Support\Audit\AuditLog;
@@ -141,3 +142,18 @@ Artisan::command('hcms:competency-recalculate {--tenant= : Kode tenant; bawaan s
 })->describe('Hitung ulang gap & JFI semua pegawai dari skor kompetensi yang masih berlaku');
 
 Schedule::command('hcms:competency-recalculate')->weeklyOn(0, '02:00')->withoutOverlapping()->onOneServer();
+
+// HCMS: saran TNA otomatis dari gap kompetensi ≤ −1 dan PIP berjalan (setelah hitung ulang JFI mingguan)
+Artisan::command('hcms:tna-suggest {--year= : Tahun rencana; bawaan tahun berjalan} {--tenant= : Kode tenant; bawaan semua tenant aktif}', function (TrainingNeeds $needs) {
+    $year = (int) ($this->option('year') ?: now()->year);
+    $rows = [];
+    foreach (DB::table('tenants')->where('status', 'active')->when($this->option('tenant'), fn ($q, $code) => $q->where('code', strtoupper($code)))->get(['id', 'code']) as $tenant) {
+        $result = app(TenantContext::class)->runAs((int) $tenant->id, null, fn () => $needs->refreshSuggestions($year));
+        $rows[] = [$tenant->code, $year, $result['gap'], $result['performance'], $result['removed']];
+    }
+    $this->table(['Tenant', 'Tahun', 'Saran baru (gap)', 'Saran baru (PIP)', 'Saran usang dihapus'], $rows);
+
+    return 0;
+})->describe('Perbarui saran kebutuhan pelatihan (TNA) dari gap kompetensi dan PIP');
+
+Schedule::command('hcms:tna-suggest')->weeklyOn(0, '03:00')->withoutOverlapping()->onOneServer();

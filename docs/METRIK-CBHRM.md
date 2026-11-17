@@ -78,10 +78,10 @@ Kesiapan adalah bahan pertimbangan, **bukan** rekomendasi atau keputusan penempa
 
 | Metrik | Definisi | Status |
 |---|---|---|
-| Kebutuhan pelatihan | Satu kebutuhan = pegawai × kompetensi (atau topik) × periode, dengan sumber: gap, kinerja/PIP, prioritas organisasi, atau permintaan. | 📌 |
-| Skor prioritas | Kritikalitas (1–3) × besar gap (|gap|, maks 4) × faktor strategis (1; 1,5 bila terkait sasaran strategis aktif). Kebutuhan dari PIP selalu prioritas **tinggi**. Kelompok: tinggi ≥ 6, sedang 3–5,99, rendah < 3. | 📌 K5 |
-| Kebutuhan terbuka | Kebutuhan berstatus disetujui yang belum punya intervensi terencana. | 📌 |
-| Pemisahan | Saran otomatis (dari gap atau IDP) tidak dihitung sebagai kebutuhan TNA sebelum disetujui HR. | 📌 |
+| Kebutuhan pelatihan | Satu kebutuhan = pegawai × kompetensi (atau topik) × periode, dengan sumber: gap, kinerja/PIP, prioritas organisasi, atau permintaan. | ✅ `training_needs` (pegawai × kompetensi/topik × tahun, sumber, dedupe saran) |
+| Skor prioritas | Kritikalitas (1–3) × besar gap (|gap|, maks 4) × faktor strategis (1; 1,5 bila terkait sasaran strategis aktif). Kebutuhan dari PIP selalu prioritas **tinggi**. Kelompok: tinggi ≥ 6, sedang 3–5,99, rendah < 3. | ✅ `TrainingNeeds::score/level` |
+| Kebutuhan terbuka | Kebutuhan berstatus disetujui yang belum punya intervensi terencana (status `planned` diisi saat IDP/pelatihan dibangun). | ✅ Laporan TNA (status Disetujui) |
+| Pemisahan | Saran otomatis (dari gap atau IDP) tidak dihitung sebagai kebutuhan TNA sebelum disetujui HR. | ✅ saran = status `suggested`; Laporan TNA memisahkannya |
 
 ---
 
@@ -178,3 +178,4 @@ Semua keputusan **disetujui pemilik produk pada 2026-11-17** sesuai rekomendasi.
 | 2026-11-17 | K1–K9 dan seluruh usulan disetujui. K1–K3 diterapkan: JFI & gap boleh kosong, kolom `coverage`, band `insufficient`, gap kritis ≤ −1; snapshot `DEFINITIONS_VERSION` = 2 (metrik baru `jfi_insufficient`), snapshot 2025-11 s.d. 2026-10 dibangun ulang; JFI dihitung ulang dengan `hcms:competency-recalculate`. |
 | 2026-11-17 | K9 diperinci: penyamaran hanya bagi pengguna tanpa hak membuka data individual; diterapkan di dashboard executive, Dasbor Kinerja, dan Laporan Kompetensi. |
 | 2026-11-18 | K4 diterapkan di Kesiapan Posisi; definisi cakupan profil jabatan & job family terpetakan penuh ditetapkan. |
+| 2026-11-18 | §5 TNA diterapkan (Rilis 2 gelombang 1): saran otomatis dari gap ≤ −1 dan PIP; tanpa gap kompetensi, prioritas ditetapkan pengaju/peninjau. |

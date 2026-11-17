@@ -131,3 +131,15 @@ Route::post('talent/potential-instruments/draft', 'Talent\PotentialInstrumentsCo
 Route::put('talent/potential-instruments/{id}', 'Talent\PotentialInstrumentsController@update')->whereNumber('id');
 Route::post('talent/potential-instruments/{id}/publish', 'Talent\PotentialInstrumentsController@publish')->whereNumber('id');
 Route::delete('talent/potential-instruments/{id}', 'Talent\PotentialInstrumentsController@destroy')->whereNumber('id');
+
+// Learning & Development (Rilis 2 gelombang 1): Training Need Analysis
+Route::get('development/needs', 'Development\NeedsController@index');
+Route::get('development/needs/report', 'Development\NeedsReportController@index');
+Route::post('development/needs/refresh', 'Development\NeedsController@refresh');
+Route::post('development/needs/review', 'Development\NeedsController@review');
+Route::get('development/needs/create', 'Development\NeedsController@create');
+Route::post('development/needs', 'Development\NeedsController@store');
+Route::get('development/needs/{id}/edit', 'Development\NeedsController@edit')->whereNumber('id');
+Route::put('development/needs/{id}', 'Development\NeedsController@update')->whereNumber('id');
+Route::get('ess/training-requests', 'Employee\TrainingRequestsController@index');
+Route::post('ess/training-requests', 'Employee\TrainingRequestsController@store')->middleware('throttle:10,1,ess-training');
