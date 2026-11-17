@@ -2,8 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Domain\Competency\Services\CompetencyFramework;
+use App\Domain\Competency\Services\CompetencyHistory;
 use App\Domain\Organization\Services\OrgUnitClosure;
 use App\Domain\Performance\Services\PerformancePolicy;
+use App\Domain\Tenancy\Actions\CreateTenant;
 use App\Support\Security\Roles;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -96,8 +99,8 @@ class LoadSeed extends Command
             'status' => 'active', 'license_type' => 'enterprise', 'data_region' => 'ID', 'activated_at' => $this->now, 'created_at' => $this->now, 'updated_at' => $this->now]);
         $this->company = DB::table('corporate')->insertGetId(['tenant_id' => $this->tenant, 'uuid' => (string) Str::uuid7(), 'code' => 'LOAD1',
             'slug_corporate' => 'pt-uji-beban', 'corporate_name' => 'PT Uji Beban', 'created_at' => $this->now, 'updated_at' => $this->now]);
-        \App\Domain\Tenancy\Actions\CreateTenant::seedUnitReferences($this->tenant);
-        \App\Domain\Competency\Services\CompetencyFramework::ensureCategories($this->tenant);
+        CreateTenant::seedUnitReferences($this->tenant);
+        CompetencyFramework::ensureCategories($this->tenant);
     }
 
     /** @return array{0: array<int,int>, 1: array<int, int[]>} unit id per kedalaman */
@@ -285,6 +288,8 @@ class LoadSeed extends Command
         $this->insert('employee_competencies', array_map(fn ($r) => ['assessment_id' => $assessment] + $r, $scores));
         $this->insert('competency_gaps', $gaps);
         $this->insert('job_fit_results', $fits);
+        // Hasil sintetis menjadi titik awal riwayat kompetensi (prasyarat P1 CBHRM)
+        CompetencyHistory::backfill();
     }
 
     // ------------------------------------------------------------ kinerja

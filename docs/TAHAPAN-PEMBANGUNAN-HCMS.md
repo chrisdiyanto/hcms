@@ -168,7 +168,7 @@ Urutan pengerjaan:
 
 **Status 2026-11-17 — gelombang 2 selesai (117 tes lulus; diuji di browser di tenant DEMO):** layanan `CompetencyAssessment` — HR membuka asesmen per pegawai (kompetensi = profil posisi primer saat ini; satu asesmen berjalan per pegawai); penilai diri sendiri dari akun pegawai, atasan otomatis dari solid line (naik bila kosong), rekan/bawahan/HR dipilih; notifikasi in-app ke penilai. Menu Layanan Mandiri › "Asesmen Saya": daftar tugas penilaian, form skor 1–5 dengan deskripsi level & indikator dari kamus (Alpine.js) + bukti perilaku, profil kompetensi & JFI sendiri. Kompetensi › "Asesmen Kompetensi" (HR/Asesor): rekap per kelompok penilai tanpa skor individual rekan/bawahan, input hasil assessment center, tutup → `employee_competencies` (berlaku 24 bulan, rincian per kelompok), `competency_gaps`, `job_fit_results`, draf IDP (`competency_idp_suggestions`) untuk kompetensi kritis dengan gap negatif; batal dengan alasan. Bobot penilai & batas band dapat diatur per tenant di `tenant_settings` (`competency.rater_weights`, `competency.jfi_bands`). Kompetensi › "Laporan Kompetensi": sebaran kesiapan, gap terbesar, heatmap gap unit × kompetensi, profil individu (radar wajib vs aktual, riwayat) — dibatasi data scope. Grafik memakai ECharts 6.1 via Vite (`resources/js/charts.js`, hanya dimuat di halaman laporan); `echarts-all.js` 2.2.7 bawaan Sximo tidak dipakai. **Belum:** Position Readiness kandidat terhadap posisi selain posisi saat ini (fungsi `fitFor` sudah ada); job batch penghitungan ulang saat profil berubah/skor kedaluwarsa; pengingat tenggat penilai; kalibrasi asesmen; gerbang: satu job family pilot terpetakan penuh (saat ini DEMO baru 1 kompetensi).
 
-**Penyelesaian backlog Fase 2:** Position Readiness menjadi laporan per posisi sasaran yang membandingkan kandidat internal berdasarkan JFI/band, kompetensi kritis yang belum terpenuhi, dan tanggal asesmen; kandidat dibatasi data scope dan laporan menandai skor kedaluwarsa. Tambahkan batch penghitungan ulang JFI/gap setelah perubahan profil atau kedaluwarsa hasil, pengingat tenggat penilai, serta kalibrasi asesmen dengan alasan dan jejak perubahan. Keluaran ini melengkapi laporan gap yang sudah tersedia dan menjadi masukan terstruktur untuk TNA, IDP, talent review, dan suksesi.
+**Penyelesaian backlog Fase 2:** Position Readiness menjadi laporan per posisi sasaran yang membandingkan kandidat internal berdasarkan JFI/band, kompetensi kritis yang belum terpenuhi, dan tanggal asesmen; kandidat dibatasi data scope dan laporan menandai skor kedaluwarsa. Tambahkan batch penghitungan ulang JFI/gap setelah perubahan profil atau kedaluwarsa hasil, pengingat tenggat penilai, serta kalibrasi asesmen dengan alasan dan jejak perubahan. Simpan juga riwayat hasil per asesmen (skor, gap, JFI) agar asesmen baru tidak menimpa hasil lama — prasyarat P1 laporan CBHRM. Keluaran ini melengkapi laporan gap yang sudah tersedia dan menjadi masukan terstruktur untuk TNA, IDP, talent review, dan suksesi.
 
 **Gerbang keluar:** satu job family pilot terpetakan penuh.
 
@@ -234,10 +234,34 @@ Urutan disarankan: Offboarding & ER lengkap → Learning & Development → Talen
 #### People Analytics dan keluaran CBHRM lintas modul
 - Satukan laporan gap kompetensi/Position Readiness, TNA dan efektivitas pengembangan, kinerja, Nine Box/talent pool, serta succession ke tampilan analitik dengan definisi metrik dan periode yang konsisten.
 - Gunakan snapshot bulanan `analytics_*`, data scope tenant/unit, audit akses dan ekspor, serta penyamaran agregat berisi kurang dari 5 orang.
-- Kriteria penerimaan Rilis 2: kebutuhan dari gap dapat ditelusuri hingga intervensi dan evaluasinya; talent pool dapat ditelusuri ke asesmen dan keputusan talent review; laporan posisi kritis menunjukkan kandidat dan gap aktual; seluruh laporan memiliki filter periode/unit dan ekspor sesuai kebijakan akses.
+- Kriteria penerimaan Rilis 2: kebutuhan dari gap dapat ditelusuri hingga intervensi dan evaluasinya; talent pool dapat ditelusuri ke asesmen dan keputusan talent review; laporan posisi kritis menunjukkan kandidat dan gap aktual; seluruh laporan memiliki filter periode/unit dan ekspor sesuai kebijakan akses. Ketertelusuran dibuktikan dengan satu tes end-to-end per pegawai: gap → kebutuhan TNA disetujui → IDP → pelatihan selesai → asesmen ulang → gap tertutup (memakai riwayat hasil per asesmen, prasyarat P1).
 
 #### Urutan laporan CBHRM dan isi minimum
 Urutan berikut mengikuti ketergantungan data. Setiap laporan harus mendukung filter periode dan unit yang relevan, menampilkan waktu pembaruan serta definisi metrik, menghormati data scope dan izin sensitif, dan menyediakan ekspor yang tercatat sesuai kebijakan.
+
+**Status per 2026-11-17** (urutan laporan ≠ urutan pembangunan; sebagian sudah tersedia dari Fase 2–3):
+
+| No | Laporan | Status | Yang sudah ada / yang kurang |
+|---|---|---|---|
+| 1 | Profil kompetensi jabatan | 🟡 sebagian | Profil job + override posisi berversi ada; laporan cakupan pemetaan & posisi tanpa profil belum |
+| 2 | Profil & asesmen pegawai | 🟡 sebagian | Laporan Kompetensi › profil individu (radar, riwayat asesmen); riwayat skor per kompetensi belum tersimpan (lihat prasyarat P1) |
+| 3 | Competency Gap Analysis | 🟡 sebagian | Sebaran band, gap terbesar, heatmap unit × kompetensi; tren gap belum (P1) |
+| 4 | Position Readiness | 🟡 sebagian | Fungsi `fitFor` ada; laporan per posisi sasaran masih backlog Fase 2 |
+| 5–7 | TNA, IDP, pelatihan & efektivitas | ⬜ belum | Hanya `competency_idp_suggestions` (draf saran IDP) |
+| 8 | Performance Management | ✅ ada | Dasbor Kinerja (`executive/analytic/performance`), rating final/sementara, kalibrasi, keberatan, PIP |
+| 9–11 | Talent review/Nine Box, talent pool, suksesi | ⬜ belum | Butuh instrumen potensi, penanda posisi kritis, aspirasi karier (P3) |
+| 12 | People Analytics | 🟡 kerangka | Dashboard Executive (ringkasan, turnover, mobilitas, DEIB, demografi, pengembangan) menjadi wadahnya |
+
+**Urutan pembangunan yang disarankan:** (a) lengkapi 1–4 dan 8 beserta prasyarat P1–P2 → (b) TNA → IDP → pelatihan (5–7) → (c) talent review → pool → suksesi (9–11) → (d) People Analytics lintas modul (12) di dalam Dashboard Executive.
+
+**Prasyarat sebelum laporan Rilis 2:**
+- **P1 — Riwayat hasil kompetensi.** `employee_competencies`, `competency_gaps`, dan `job_fit_results` saat ini unik per pegawai(+posisi)(+kompetensi), sehingga asesmen baru menimpa hasil lama. Simpan hasil per asesmen (gap & JFI berkunci `assessment_id`) dan pertahankan tabel "terkini" sebagai jalan pintas. Tanpa ini riwayat skor (laporan 2), tren gap (3), perbandingan sebelum/sesudah pelatihan (7), dan tren antarperiode (12) tidak dapat dihitung.
+  **Status 2026-11-17 — selesai (152 tes lulus):** tabel `employee_competency_history` (skor per asesmen), `job_fit_history` (setiap perhitungan JFI; pemicu `assessment` / `recalculation` / `backfill`), dan `competency_gap_history` (gap per kompetensi per perhitungan) — hanya bertambah, UPDATE ditolak trigger MySQL; DELETE tetap mengikuti cascade pegawai/tenant. `CompetencyHistory` mencatat riwayat saat asesmen ditutup dan saat JFI dihitung ulang; tabel "terkini" tetap ada. Migrasi mengisi riwayat awal dari hasil terkini (idempoten; hasil yang tertimpa sebelum P1 tidak dapat dipulihkan). Pembaca: daftar & detail asesmen kini menampilkan JFI/gap milik asesmen itu sendiri (sebelumnya asesmen lama menampilkan hasil terkini); profil kompetensi individu menampilkan perubahan skor terhadap asesmen sebelumnya dan grafik riwayat JFI; "Unduh data saya" memuat ketiga riwayat. Benchmark: Laporan Kompetensi 454 ms, profil individu 79 ms (p95).
+- **P2 — Snapshot `analytics_*` bulanan dimulai sekarang**, bukan di Rilis 2: tren hanya tersedia sejak snapshot pertama.
+- **P3 — Data yang belum ada di skema:** penanda posisi kritis + tingkat dampak di `positions` (laporan 11); aspirasi/minat karier pegawai lewat Layanan Mandiri (10); instrumen asesmen potensi berversi (9); keputusan apakah risiko kehilangan pegawai dikelola (data sensitif).
+- **P4 — Kamus metrik `docs/METRIK-CBHRM.md`** disepakati sebelum membangun laporan 4–12, minimal: definisi gap kritis (mis. kritikalitas 3 dan gap ≤ −1); perlakuan asesmen kedaluwarsa (dikeluarkan atau ditandai); horizon kesiapan (siap sekarang / 1–2 tahun / ≥ 3 tahun) dan aturan penentuannya; pemetaan Nine Box (band rating final → 3 tingkat kinerja, instrumen potensi → 3 tingkat); rumus cakupan suksesi (% posisi kritis dengan ≥ 1 suksesor siap) dan bench strength (rata-rata suksesor siap per posisi kritis); rumus prioritas TNA (mis. kritikalitas × besar gap × jumlah orang × keterkaitan sasaran strategis); waktu ukur evaluasi tingkat 3 (3–6 bulan) dan tingkat 4 (siklus kinerja berikutnya).
+- **P5 — Aturan privasi seragam:** penyamaran agregat < 5 orang diterapkan juga ke dashboard executive yang sudah ada (DEIB, demografi), bukan hanya laporan baru; data potensi & talent review memakai izin sensitif tersendiri, dan akses baris individu — bukan hanya ekspor — tercatat di audit.
+- **P6 — Ketertelusuran IDP:** IDP dibuat dari `competency_idp_suggestions` dengan rujukan ke saran asalnya agar rantai gap → saran → IDP tidak terputus.
 
 1. **Profil kompetensi jabatan dan organisasi** — tersedia setelah standar jabatan/profil kompetensi dipetakan.
    - Jabatan/posisi, unit, versi kerangka kompetensi, tanggal berlaku, dan pemilik profil.
@@ -310,6 +334,8 @@ Urutan berikut mengikuti ketergantungan data. Setiap laporan harus mendukung fil
     - Tren antarperiode dan per unit/kelompok jabatan dengan definisi, sumber, waktu snapshot, serta aturan pengecualian yang konsisten.
     - Drill-through ke laporan sumber hanya bagi pengguna yang berhak; sembunyikan agregat kurang dari lima orang dan catat akses/ekspor.
     - Hindari menyimpulkan sebab-akibat hanya dari korelasi antara pelatihan, kompetensi, rating, dan promosi.
+
+Catatan cakupan: rekrutmen/seleksi berbasis kompetensi dan kaitan kompetensi dengan remunerasi berada di Rilis 3; keduanya memakai ulang profil kompetensi jabatan (laporan 1).
 
 Fitur AI rekomendasi (draf IDP, saran pelatihan, ringkasan check-in) memakai `RagService`/Gemini dengan pseudonimisasi dan log versi model + prompt, sebagai bantuan penyusunan rekomendasi yang tetap ditinjau manusia.
 

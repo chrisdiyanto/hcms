@@ -202,7 +202,8 @@ class PerformanceCycleTest extends TestCase
         $ratings = DB::table('performance_ratings')->where('employee_id', $this->employees['ANL'])->orderBy('revision')->get();
         $this->assertSame([[1, 0, 'exceeds'], [2, 1, 'outstanding']], $ratings->map(fn ($r) => [(int) $r->revision, (int) $r->is_current, $r->band])->all());
         $this->assertStringContainsString('Keberatan #'.$appeal->id, $ratings[1]->reason);
-        $this->asHr()->get('/performance/dashboard')->assertOk()->assertSee('Rating sementara');
+        $this->asHr()->get('/performance/dashboard')->assertRedirect('/executive/analytic/performance');
+        $this->asHr()->get('/executive/analytic/performance')->assertOk()->assertSee('Rating sementara');
 
         // ---- Pengesahan final: rating terkini final + snapshot immutable, periode ditutup
         $this->post('/performance/periods/'.$this->period.'/finalize')->assertSessionHasNoErrors();
@@ -226,7 +227,8 @@ class PerformanceCycleTest extends TestCase
             ->assertSessionHasErrors('reason');
 
         // ---- Dasbor
-        $this->asHr()->get('/performance/dashboard')->assertOk()->assertSee('Rating yang disahkan')->assertSee('data-chart', false);
+        $this->asHr()->get('/performance/dashboard')->assertRedirect('/executive/analytic/performance');
+        $this->asHr()->get('/executive/analytic/performance')->assertOk()->assertSee('Rating final yang disahkan')->assertSee('data-chart', false);
         $this->get('/performance/periods/'.$this->period.'/ratings')->assertOk()->assertSee('Outstanding')->assertSee('final');
 
         // ---- Ekspor rating: alasan wajib, watermark, tercatat; pegawai tanpa izin ekspor ditolak

@@ -67,7 +67,7 @@ export default function () {
         group('atasan', () => {
             page('/performance/team', 'tim-saya');
             page('/employees', 'pegawai-scoped');
-            page('/performance/dashboard', 'dasbor-scoped');
+            page('/executive/analytic/performance', 'dasbor-scoped');
         });
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Competency;
 
 use App\Domain\Competency\Services\CompetencyAssessment;
+use App\Domain\Competency\Services\CompetencyHistory;
 use App\Domain\Competency\Services\JobFitCalculator;
 use App\Domain\Employee\Services\EmployeeScope;
 use App\Http\Controllers\Concerns\AuthorizesHcmsModule;
@@ -28,7 +29,7 @@ class ReportsController extends Controller
 
     private const HEATMAP_ROWS = 25;
 
-    public function __construct(private CompetencyAssessment $assessments)
+    public function __construct(private CompetencyAssessment $assessments, private CompetencyHistory $history)
     {
         parent::__construct();
     }
@@ -139,6 +140,10 @@ class ReportsController extends Controller
                 ->where('competency_idp_suggestions.employee_id', $employee)->where('competency_idp_suggestions.status', 'draft')
                 ->get(['competency_idp_suggestions.*', 'competencies.name']),
             'statuses' => CompetencyAssessment::STATUS,
+            // Riwayat (prasyarat P1 CBHRM): skor lintas asesmen & setiap perhitungan JFI
+            'timeline' => $this->history->scoreTimeline($employee),
+            'fitTimeline' => $this->history->fitTimeline($employee),
+            'triggers' => CompetencyHistory::TRIGGERS,
         ]);
     }
 

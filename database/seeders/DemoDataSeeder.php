@@ -2,7 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Domain\Competency\Services\CompetencyHistory;
 use App\Domain\Performance\Services\PerformancePolicy;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -312,6 +314,9 @@ class DemoDataSeeder extends Seeder
                 'target_level' => 3, 'status' => 'accepted', 'created_at' => $now, 'updated_at' => $now,
             ]);
         }
+        if (Schema::hasTable('employee_competency_history')) {
+            CompetencyHistory::backfill();
+        }
     }
 
     private function seedWorkflow(int $tenantId, array $employees, array $users, $now): void
@@ -376,6 +381,7 @@ class DemoDataSeeder extends Seeder
         $period = DB::table('performance_periods')->where('tenant_id', $tenantId)->where('code', 'DEMO-2026')->first();
         if ($period) {
             $this->seedPerformanceTrend($tenantId, $employees, $now);
+
             return;
         }
         $policyId = null;
@@ -461,8 +467,8 @@ class DemoDataSeeder extends Seeder
                 $this->upsert('performance_ratings', ['period_id' => $id, 'employee_id' => $employeeId, 'revision' => 1], [
                     'tenant_id' => $tenantId, 'uuid' => (string) Str::uuid7(), 'is_current' => true, 'rated' => true,
                     'raw_score' => $score, 'final_score' => $score, 'band' => $band, 'band_label' => $bandLabel,
-                    'published_at' => \Carbon\Carbon::parse($end)->endOfDay(),
-                    'appeal_deadline' => \Carbon\Carbon::parse($end)->addDays(14)->toDateString(),
+                    'published_at' => Carbon::parse($end)->endOfDay(),
+                    'appeal_deadline' => Carbon::parse($end)->addDays(14)->toDateString(),
                     'published_by' => null, 'created_at' => $now, 'updated_at' => $now,
                 ]);
             }
@@ -517,7 +523,7 @@ class DemoDataSeeder extends Seeder
             ]);
             DB::table('employee_assignments')->where('id', $baseAssignment->id)->update([
                 'position_id' => $priorPosition, 'effective_from' => '2025-01-01',
-                'effective_to' => \Carbon\Carbon::parse($date)->subDay()->toDateString(),
+                'effective_to' => Carbon::parse($date)->subDay()->toDateString(),
                 'decree_number' => 'SK/DEMO/PROMO/'.$i, 'updated_at' => $now,
             ]);
             $this->upsert('employee_assignments', ['employee_id' => $employees[$i], 'type' => 'primary', 'effective_from' => $date], [

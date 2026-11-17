@@ -3,9 +3,11 @@
 namespace Tests\Feature\Competency;
 
 use App\Domain\Competency\Services\CompetencyFramework;
+use App\Domain\Competency\Services\CompetencyHistory;
 use App\Domain\Competency\Services\JobFitCalculator;
 use App\Support\Security\Roles;
 use App\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\Concerns\InteractsWithTenants;
@@ -221,6 +223,65 @@ class CompetencyAssessmentTest extends TestCase
         $risk = DB::table('employee_competencies')->where('employee_id', $this->analystEmployee)->where('competency_code', 'RISK')->first();
         $this->assertSame('5.00', $risk->score);
         $this->assertSame('assessment_center', $risk->source);
+    }
+
+    /** Prasyarat P1 CBHRM: asesmen kedua tidak menghapus hasil asesmen pertama. */
+    public function test_riwayat_hasil_per_asesmen_tidak_tertimpa(): void
+    {
+        $all = fn (int $s) => ['RISK' => $s, 'LEAD' => $s, 'STRAT' => $s, 'DATA' => $s];
+        $first = $this->open(['include_self' => 0]);
+        $this->rate($this->manager, $this->raterId($first, $this->manager, 'manager'), ['RISK' => 3, 'LEAD' => 2, 'STRAT' => 4, 'DATA' => 2]);
+        $this->actingAsSximo($this->hr, Roles::id(Roles::TENANT_ADMIN))->post('/competency/assessments/'.$first.'/close')->assertSessionHasNoErrors();
+        $this->travel(3)->months();
+        $second = $this->open(['include_self' => 0]);
+        $this->rate($this->manager, $this->raterId($second, $this->manager, 'manager'), $all(4));
+        $this->actingAsSximo($this->hr, Roles::id(Roles::TENANT_ADMIN))->post('/competency/assessments/'.$second.'/close')->assertSessionHasNoErrors();
+
+        // Tabel terkini = asesmen kedua; riwayat menyimpan keduanya
+        $this->assertSame('100.00', DB::table('job_fit_results')->where('employee_id', $this->analystEmployee)->value('jfi'));
+        $fits = DB::table('job_fit_history')->where('employee_id', $this->analystEmployee)->orderBy('computed_at')->get();
+        $this->assertSame([[$first, '71.30', 'assessment'], [$second, '100.00', 'assessment']],
+            $fits->map(fn ($f) => [(int) $f->assessment_id, $f->jfi, $f->trigger])->all());
+        $this->assertSame(['LEAD' => '-2.00', 'RISK' => '-1.00', 'DATA' => '-1.00', 'STRAT' => '0.00'],
+            DB::table('competency_gap_history')->where('job_fit_history_id', $fits[0]->id)->orderBy('gap')->orderByDesc('criticality')->pluck('gap', 'competency_code')->all());
+        $this->assertSame(['2.00', '4.00'], DB::table('employee_competency_history')->where('employee_id', $this->analystEmployee)
+            ->where('competency_code', 'LEAD')->orderBy('assessed_at')->pluck('score')->all());
+        $this->assertSame($this->tenant, (int) DB::table('job_fit_history')->value('tenant_id'));
+
+        // Halaman asesmen pertama tetap menampilkan hasilnya sendiri, bukan hasil terkini
+        // (daftar dibuka dulu: pesan flash penutupan asesmen kedua menyebut "JFI 100,0%")
+        $this->get('/competency/assessments?status=closed')->assertOk()->assertSee('71,3%')->assertSee('100,0%');
+        $this->get('/competency/assessments/'.$first)->assertOk()->assertSee('71,3%')->assertDontSee('100,0%');
+        // Profil individu: perubahan skor & grafik riwayat JFI
+        $this->get('/competency/reports/employees/'.$this->analystEmployee)->assertOk()
+            ->assertSee('Riwayat Job Fit Index')->assertSee('+2,00')->assertSee('data-chart', false);
+
+        // Riwayat tidak dapat diubah
+        try {
+            DB::table('job_fit_history')->where('id', $fits[0]->id)->update(['jfi' => 99]);
+            $this->fail('UPDATE riwayat seharusnya ditolak');
+        } catch (QueryException $e) {
+            $this->assertStringContainsString('hanya bertambah', $e->getMessage());
+        }
+    }
+
+    public function test_backfill_riwayat_idempoten(): void
+    {
+        $assessment = $this->open(['include_self' => 0]);
+        $this->rate($this->manager, $this->raterId($assessment, $this->manager, 'manager'), ['RISK' => 3, 'LEAD' => 2, 'STRAT' => 4, 'DATA' => 2]);
+        $this->actingAsSximo($this->hr, Roles::id(Roles::TENANT_ADMIN))->post('/competency/assessments/'.$assessment.'/close')->assertSessionHasNoErrors();
+
+        // Hasil yang sudah tercatat tidak digandakan
+        $this->assertSame(['scores' => 0, 'fits' => 0], CompetencyHistory::backfill());
+        // Hasil "terkini" tanpa riwayat (data lama sebelum P1) diisi sekali dengan trigger backfill
+        DB::table('competency_gap_history')->delete();
+        DB::table('job_fit_history')->delete();
+        DB::table('employee_competency_history')->delete();
+        $this->assertSame(['scores' => 4, 'fits' => 1], CompetencyHistory::backfill());
+        $this->assertSame(['scores' => 0, 'fits' => 0], CompetencyHistory::backfill());
+        $this->assertSame('backfill', DB::table('job_fit_history')->value('trigger'));
+        $this->assertSame(4, DB::table('competency_gap_history')->count());
+        $this->get('/competency/assessments/'.$assessment)->assertOk()->assertSee('71,3%');
     }
 
     public function test_validasi_pembukaan_hak_akses_dan_isolasi(): void

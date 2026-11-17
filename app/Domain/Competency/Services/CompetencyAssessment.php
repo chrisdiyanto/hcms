@@ -40,6 +40,7 @@ final class CompetencyAssessment
         private CompetencyProfile $profiles,
         private ApproverResolver $resolver,
         private Notifier $notifier,
+        private CompetencyHistory $history,
     ) {}
 
     // ------------------------------------------------------------------ buka
@@ -249,6 +250,7 @@ final class CompetencyAssessment
                         'employee_id' => $assessment->employee_id, 'competency_code' => $code, 'created_at' => now(),
                     ]));
                 }
+                $this->history->recordScore($assessment, (int) $cid, $code, $row);
             }
 
             DB::table('competency_assessments')->where('id', $assessment->id)->update([
@@ -357,6 +359,8 @@ final class CompetencyAssessment
         $existing
             ? DB::table('job_fit_results')->where('id', $existing)->update($row)
             : DB::table('job_fit_results')->insert(TenantScope::fillForInsert('job_fit_results', $row + ['employee_id' => $employeeId, 'position_id' => $positionId]));
+        // Tabel di atas = kondisi terkini (ditimpa); riwayat menyimpan setiap perhitungan
+        $this->history->recordFit($employeeId, $positionId, $assessmentId, $fit, $assessmentId ? 'assessment' : 'recalculation', $now);
 
         return $fit;
     }

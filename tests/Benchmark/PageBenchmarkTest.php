@@ -116,8 +116,8 @@ class PageBenchmarkTest extends TestCase
             '/competency/reports/employees/'.$employee,
             '/performance/periods/'.$periods['KIN-2026'],
             '/performance/plans/'.$plan.'/monitoring',
-            '/performance/dashboard?period='.$periods['KIN-2026'],
-            '/performance/dashboard?period='.$periods['KIN-2025'],
+            '/executive/analytic/performance?period='.$periods['KIN-2026'],
+            '/executive/analytic/performance?period='.$periods['KIN-2025'],
             '/performance/periods/'.$periods['KIN-2025'].'/ratings',
             '/core/audit',
             '/executive/dashboard',
@@ -137,7 +137,7 @@ class PageBenchmarkTest extends TestCase
             '/performance/team',
             '/employees',
             '/competency/reports',
-            '/performance/dashboard',
+            '/executive/analytic/performance',
         ]);
         $this->assertNotEmpty(self::$results);
     }

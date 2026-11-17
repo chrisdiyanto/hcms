@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Competency;
 
 use App\Domain\Competency\Services\CompetencyAssessment;
 use App\Domain\Competency\Services\CompetencyFramework;
+use App\Domain\Competency\Services\CompetencyHistory;
 use App\Domain\Competency\Services\JobFitCalculator;
 use App\Domain\Competency\Services\RaterAggregator;
 use App\Domain\Employee\Services\EmployeeScope;
@@ -21,7 +22,7 @@ class AssessmentsController extends Controller
 {
     use AuthorizesHcmsModule;
 
-    public function __construct(private CompetencyAssessment $assessments, private CompetencyFramework $framework)
+    public function __construct(private CompetencyAssessment $assessments, private CompetencyFramework $framework, private CompetencyHistory $history)
     {
         parent::__construct();
     }
@@ -39,16 +40,16 @@ class AssessmentsController extends Controller
         $rows = TenantScope::table('competency_assessments')
             ->join('employees', 'employees.id', '=', 'competency_assessments.employee_id')
             ->join('positions', 'positions.id', '=', 'competency_assessments.position_id')
-            ->leftJoin('job_fit_results', function ($j) {
-                $j->on('job_fit_results.employee_id', '=', 'competency_assessments.employee_id')
-                    ->on('job_fit_results.position_id', '=', 'competency_assessments.position_id')
-                    ->on('job_fit_results.assessment_id', '=', 'competency_assessments.id');
+            // JFI hasil asesmen itu sendiri (riwayat), bukan hasil terkini yang tertimpa asesmen berikutnya
+            ->leftJoin('job_fit_history', function ($j) {
+                $j->on('job_fit_history.assessment_id', '=', 'competency_assessments.id')
+                    ->whereIn('job_fit_history.trigger', ['assessment', 'backfill']);
             })
             ->whereIn('competency_assessments.employee_id', EmployeeScope::query()->select('employees.id'))
             ->when(array_key_exists($status, CompetencyAssessment::STATUS), fn ($q) => $q->where('competency_assessments.status', $status))
             ->orderByDesc('competency_assessments.id')
             ->select(['competency_assessments.*', 'employees.full_name', 'employees.employee_number', 'positions.title as position_title',
-                'job_fit_results.jfi', 'job_fit_results.band'])
+                'job_fit_history.jfi', 'job_fit_history.band'])
             ->paginate(25)->withQueryString();
 
         $counts = TenantScope::table('assessment_raters')->whereIn('assessment_id', $rows->pluck('id'))->where('rater_type', '!=', 'assessment_center')
@@ -126,9 +127,8 @@ class AssessmentsController extends Controller
             ->get(['competency_assessment_details.competency_id', 'competency_assessment_details.score', 'competency_assessment_details.evidence'])
             ->keyBy('competency_id');
 
-        $fit = $row->status === 'closed'
-            ? TenantScope::table('job_fit_results')->where('employee_id', $row->employee_id)->where('position_id', $row->position_id)->first()
-            : null;
+        // Hasil asesmen ini dari riwayat: asesmen lama tetap menampilkan JFI & gap miliknya sendiri
+        $fit = $row->status === 'closed' ? $this->history->fitForAssessment($row->id) : null;
 
         return view('competency.assessments.show', [
             'pageTitle' => $row->title,
@@ -138,9 +138,7 @@ class AssessmentsController extends Controller
             'position' => TenantScope::table('positions')->where('id', $row->position_id)->first(),
             'raters' => $raters, 'competencies' => $competencies, 'aggregate' => $aggregate, 'centerScores' => $centerScores,
             'fit' => $fit,
-            'gaps' => $row->status === 'closed' ? TenantScope::table('competency_gaps')->join('competencies', 'competencies.id', '=', 'competency_gaps.competency_id')
-                ->where('competency_gaps.employee_id', $row->employee_id)->where('competency_gaps.position_id', $row->position_id)
-                ->orderBy('competency_gaps.gap')->get(['competency_gaps.*', 'competencies.name']) : collect(),
+            'gaps' => $fit ? $this->history->gaps($fit->id) : collect(),
             'idp' => TenantScope::table('competency_idp_suggestions')->join('competencies', 'competencies.id', '=', 'competency_idp_suggestions.competency_id')
                 ->where('competency_idp_suggestions.assessment_id', $row->id)->get(['competency_idp_suggestions.*', 'competencies.name']),
             'raterTypes' => CompetencyAssessment::RATER_TYPES, 'groupLabels' => RaterAggregator::GROUP_LABELS,
