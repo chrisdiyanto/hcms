@@ -1,52 +1,56 @@
-<?php namespace App\Http\Controllers;
+<?php
+
+namespace App\Http\Controllers;
 
 use App\Models\Dashboard;
-use App\Http\Controllers;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
-use App\User;
-use Validator, Input, Redirect ; 
 
-class DashboardController extends Controller {
+class DashboardController extends Controller
+{
+    public $module = 'dashboard';
 
-	public $module = 'dashboard';
-	public function __construct()
-	{
-		parent::__construct();
-		$this->model = new Dashboard();
-		
-        $this->data = array(
-            'pageTitle' =>  $this->config['cnf_appname'],
-            'pageNote'  =>  'Welcome to Dashboard',
-            
-        );			
-	}
+    public function __construct()
+    {
+        parent::__construct();
+        $this->model = new Dashboard();
 
-	public function index( Request $request )
-	{
-		$last_login = session('ll');
-		if(empty($last_login)){
-			return redirect('user/changepswd');
-		}
-		
-		return view('dashboard.index', $this->data);
-		
-	}	
-	
-	function show( Request $request , $id ) 
-	{
-		/* Handle import , export and view */
-		$task =$id ;
-		switch( $task)
-		{
-			default:
-				return view('dashboard.index',$this->data);
-				break;		
-		}
-	}	
+        $this->data = [
+            'pageTitle' => $this->config['cnf_appname'] ?? 'Dashboard',
+            'pageNote' => 'Welcome to Dashboard',
+        ];
+    }
 
-	// Additional function
+    public function index(Request $request)
+    {
+        if (session()->has('ll') && empty(session('ll'))) {
+            return redirect('user/changepswd');
+        }
 
+        $period = $this->model->resolvePeriod(
+            $request->query('period'),
+            $request->query('start_date'),
+            $request->query('end_date')
+        );
 
-// End of Bracket
+        $dashboardData = $this->model->getDashboardData(
+            $period['start_date'],
+            $period['end_date']
+        );
+
+        $this->data = array_merge($this->data, $dashboardData, [
+            'period' => $period,
+            'periodOptions' => $period['options'],
+            'selectedPeriod' => $period['selected_period'],
+            'startDate' => $period['start_date'],
+            'endDate' => $period['end_date'],
+            'periodLabel' => $period['label'],
+        ]);
+
+        return view('dashboard.index', $this->data);
+    }
+
+    public function show(Request $request, $id)
+    {
+        return $this->index($request);
+    }
 }
