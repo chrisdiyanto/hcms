@@ -44,6 +44,9 @@ Materi pelatihan Fase 4 gelombang 3, disusun per peran. Setiap sesi berisi **tuj
 - Buat IDP tahun berjalan: draft otomatis berisi kebutuhan pelatihan Anda yang disetujui HR dan saran dari asesmen kompetensi. Tambah/ubah aktivitas (bisa memilih dari katalog), isi sasaran yang diukur dan tenggat, lalu **ajukan ke atasan**. Bila dikembalikan, perbaiki sesuai catatan dan ajukan ulang.
 - Setelah disetujui: perbarui status setiap aktivitas. Aktivitas **selesai wajib disertai bukti** (nomor sertifikat, laporan, catatan mentor). IDP selesai otomatis bila semua aktivitas selesai atau dibatalkan.
 
+**Layanan Mandiri › Pelatihan Saya**
+- Riwayat kelas yang Anda ikuti beserta status dan nomor sertifikat. Setelah tercatat hadir, isi **survei reaksi** (1–5) sekali — hasilnya dipakai menilai efektivitas program.
+
 **Layanan Mandiri › Tugas Persetujuan & Delegasi**
 - Persetujuan yang menunggu Anda muncul di Tugas Persetujuan. Saat cuti, delegasikan persetujuan ke rekan untuk periode tertentu.
 
@@ -82,6 +85,8 @@ Materi pelatihan Fase 4 gelombang 3, disusun per peran. Setiap sesi berisi **tuj
 3. *Rincian*: kaitkan dengan sasaran strategis (skor prioritas ×1,5), isi intervensi, biaya, tenggat, penanggung jawab.
 5. **Katalog Intervensi**: daftar pelatihan, coaching, mentoring, penugasan, dan sertifikasi beserta kompetensi sasaran dan biaya; dipakai pegawai saat menyusun IDP.
 6. **Rekap IDP**: cakupan IDP, kemajuan, aktivitas lewat tenggat, biaya rencana vs realisasi, dan gap yang belum tertutup setelah aktivitas selesai.
+7. **Jadwal Pelatihan**: buat kelas dari katalog, daftarkan peserta dari kandidat IDP/TNA atau pilih pegawai, catat kehadiran, pre/post-test, dan kelulusan (lulus otomatis menyelesaikan aktivitas IDP dan kebutuhan TNA), lalu tutup kelas dengan biaya realisasi.
+8. **Efektivitas Pelatihan**: per program — penyelesaian, biaya per lulusan, evaluasi tingkat 1–4, dan indikasi lanjutkan/perbaiki/pertimbangkan dihentikan.
 4. *Laporan TNA*: kebutuhan disetujui per sumber, prioritas, kompetensi, unit; kebutuhan terbuka & berulang; perkiraan biaya.
 
 **Kinerja (urutan tahap)**

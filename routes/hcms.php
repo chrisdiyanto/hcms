@@ -152,3 +152,15 @@ Route::post('ess/idp', 'Employee\IdpController@store');
 Route::get('ess/idp/{id}', 'Employee\IdpController@show')->whereNumber('id');
 Route::put('ess/idp/{id}', 'Employee\IdpController@update')->whereNumber('id');
 Route::put('ess/idp/activities/{activity}', 'Employee\IdpController@activity')->whereNumber('activity');
+
+// Rilis 2 gelombang 3: pelaksanaan pelatihan & efektivitas
+Route::get('development/sessions', 'Development\SessionsController@index');
+Route::get('development/sessions/create', 'Development\SessionsController@create');
+Route::post('development/sessions', 'Development\SessionsController@store');
+Route::get('development/sessions/{id}', 'Development\SessionsController@show')->whereNumber('id');
+Route::post('development/sessions/{id}/enroll', 'Development\SessionsController@enroll')->whereNumber('id');
+Route::post('development/sessions/{id}/complete', 'Development\SessionsController@complete')->whereNumber('id');
+Route::put('development/sessions/participants/{participant}', 'Development\SessionsController@participant')->whereNumber('participant');
+Route::get('development/effectiveness', 'Development\EffectivenessController@index');
+Route::get('ess/trainings', 'Employee\TrainingsController@index');
+Route::post('ess/trainings/{participant}/reaction', 'Employee\TrainingsController@react')->whereNumber('participant')->middleware('throttle:10,1,ess-reaction');

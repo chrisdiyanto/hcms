@@ -119,6 +119,13 @@ final class HcmsModules
                 'access' => $hrManage + [Roles::TRAINING_ADMIN => self::READ, Roles::HRBP => self::READ, Roles::DEPARTMENT_HEAD => self::READ, Roles::AUDITOR => self::READ]],
             'myidp' => ['title' => 'IDP Saya', 'table' => 'idps', 'url' => 'ess/idp', 'parent' => 'layanan', 'icon' => 'fa fa-tasks', 'title_id' => 'IDP Saya',
                 'access' => self::everyone(), 'register_module' => false],
+            // Rilis 2 gelombang 3: pelaksanaan pelatihan & efektivitas
+            'trainingsessions' => ['title' => 'Jadwal Pelatihan', 'table' => 'training_sessions', 'url' => 'development/sessions', 'parent' => 'pengembangan', 'icon' => 'fa fa-calendar-alt', 'title_id' => 'Jadwal Pelatihan',
+                'access' => $hrManage + [Roles::TRAINING_ADMIN => self::FULL, Roles::HRBP => self::READ, Roles::AUDITOR => self::READ]],
+            'trainingeffect' => ['title' => 'Efektivitas Pelatihan', 'table' => 'training_participants', 'url' => 'development/effectiveness', 'parent' => 'pengembangan', 'icon' => 'fa fa-chart-line', 'title_id' => 'Efektivitas Pelatihan',
+                'access' => $hrManage + $orgRead + [Roles::TRAINING_ADMIN => self::READ]],
+            'mytrainings' => ['title' => 'Pelatihan Saya', 'table' => 'training_participants', 'url' => 'ess/trainings', 'parent' => 'layanan', 'icon' => 'fa fa-certificate', 'title_id' => 'Pelatihan Saya',
+                'access' => self::everyone(), 'register_module' => false],
             'mytrainingrequests' => ['title' => 'Usulan Pelatihan', 'table' => 'training_needs', 'url' => 'ess/training-requests', 'parent' => 'layanan', 'icon' => 'fa fa-hand-paper', 'title_id' => 'Usulan Pelatihan',
                 'access' => self::everyone(), 'register_module' => false],
             'mycareer' => ['title' => 'Aspirasi Karier Saya', 'table' => 'employee_career_aspirations', 'url' => 'ess/career', 'parent' => 'layanan', 'icon' => 'fa fa-compass', 'title_id' => 'Aspirasi Karier Saya',

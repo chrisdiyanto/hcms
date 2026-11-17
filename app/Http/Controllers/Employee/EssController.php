@@ -62,6 +62,7 @@ class EssController extends Controller
             'aspirasi_karier' => $rows('employee_career_aspirations', 'submitted_at'),
             'kebutuhan_pelatihan' => $rows('training_needs', 'period_year'),
             'idp' => $rows('idps', 'period_year'),
+            'pelatihan' => $rows('training_participants'),
             'aktivitas_idp' => TenantScope::table('idp_activities')->whereIn('idp_id', TenantScope::table('idps')->where('employee_id', $id)->select('id'))
                 ->orderBy('id')->get()->map(fn ($r) => collect((array) $r)->except(['tenant_id'])->all())->all(),
             'riwayat_gap_kompetensi' => $rows('competency_gap_history', 'job_fit_history_id'),

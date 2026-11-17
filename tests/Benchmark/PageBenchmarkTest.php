@@ -122,6 +122,8 @@ class PageBenchmarkTest extends TestCase
             '/development/needs/report',
             '/development/idps',
             '/development/interventions',
+            '/development/sessions',
+            '/development/effectiveness',
             '/performance/periods/'.$periods['KIN-2026'],
             '/performance/plans/'.$plan.'/monitoring',
             '/executive/analytic/performance?period='.$periods['KIN-2026'],

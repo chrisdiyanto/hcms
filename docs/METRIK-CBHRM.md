@@ -99,12 +99,13 @@ Kesiapan adalah bahan pertimbangan, **bukan** rekomendasi atau keputusan penempa
 
 | Metrik | Definisi | Status |
 |---|---|---|
-| Tingkat penyelesaian | Peserta selesai ÷ peserta terdaftar (tidak termasuk yang dibatalkan sebelum mulai). | 📌 |
-| Biaya per peserta | Biaya realisasi ÷ peserta selesai. | 📌 |
-| Evaluasi tingkat 1 (reaksi) | Survei di akhir pelatihan, skala 1–5; minimal 50% respons agar dilaporkan. | 📌 K6 |
-| Evaluasi tingkat 2 (pembelajaran) | Selisih skor pre-test dan post-test. | 📌 K6 |
-| Evaluasi tingkat 3 (penerapan) | Perubahan skor kompetensi sasaran pada asesmen **3–6 bulan** setelah pelatihan dibanding baseline sebelum pelatihan (dari riwayat P1). | 📌 K6 |
-| Evaluasi tingkat 4 (dampak) | Perubahan skor kinerja pada **siklus kinerja berikutnya** dibanding siklus sebelumnya. Dilaporkan dengan keterbatasan atribusi dan tanpa klaim sebab-akibat. | 📌 K6 |
+| Tingkat penyelesaian | Peserta selesai ÷ peserta terdaftar (tidak termasuk yang dibatalkan sebelum mulai). | ✅ `TrainingEffectiveness` (Efektivitas Pelatihan) |
+| Biaya per peserta | Biaya realisasi ÷ peserta selesai. | ✅ `TrainingEffectiveness` (Efektivitas Pelatihan) |
+| Evaluasi tingkat 1 (reaksi) | Survei di akhir pelatihan, skala 1–5; minimal 50% respons agar dilaporkan. | ✅ `TrainingEffectiveness` (Efektivitas Pelatihan) |
+| Evaluasi tingkat 2 (pembelajaran) | Selisih skor pre-test dan post-test. | ✅ `TrainingEffectiveness` (Efektivitas Pelatihan) |
+| Evaluasi tingkat 3 (penerapan) | Perubahan skor kompetensi sasaran pada asesmen **3–6 bulan** setelah pelatihan dibanding baseline sebelum pelatihan (dari riwayat P1). | ✅ `TrainingEffectiveness` (Efektivitas Pelatihan) |
+| Evaluasi tingkat 4 (dampak) | Perubahan skor kinerja pada **siklus kinerja berikutnya** dibanding siklus sebelumnya. Dilaporkan dengan keterbatasan atribusi dan tanpa klaim sebab-akibat. | ✅ `TrainingEffectiveness` (Efektivitas Pelatihan) |
+| Indikasi program | Per intervensi: **pertimbangkan dihentikan** bila reaksi < 3,0 atau rata-rata post − pre ≤ 0 (≥ 3 peserta teruji); **perbaiki** bila reaksi < 3,5 atau penyelesaian < 70%; **data belum cukup** bila belum ada peserta lulus; selain itu **lanjutkan**. Indikasi bantu, keputusan tetap pada pengelola program. Ambang awal — sesuaikan bila pemilik produk menetapkan lain. | ✅ `TrainingEffectiveness::indication` |
 
 ---
 
@@ -180,3 +181,4 @@ Semua keputusan **disetujui pemilik produk pada 2026-11-17** sesuai rekomendasi.
 | 2026-11-18 | K4 diterapkan di Kesiapan Posisi; definisi cakupan profil jabatan & job family terpetakan penuh ditetapkan. |
 | 2026-11-18 | §5 TNA diterapkan (Rilis 2 gelombang 1): saran otomatis dari gap ≤ −1 dan PIP; tanpa gap kompetensi, prioritas ditetapkan pengaju/peninjau. |
 | 2026-11-18 | §6 IDP diterapkan (Rilis 2 gelombang 2): kemajuan, lewat tenggat, gap tertutup dari gap terkini. |
+| 2026-11-18 | §7 pelatihan & efektivitas diterapkan (Rilis 2 gelombang 3); aturan indikasi program ditambahkan dengan ambang awal. |
