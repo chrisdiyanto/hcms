@@ -133,6 +133,18 @@ final class HcmsModules
             // Talent (prasyarat P3 CBHRM): kamus instrumen asesmen potensi berversi
             'potentialinstruments' => ['title' => 'Instrumen Potensi', 'table' => 'potential_instruments', 'url' => 'talent/potential-instruments', 'parent' => 'talenta', 'icon' => 'fa fa-seedling', 'title_id' => 'Instrumen Potensi',
                 'access' => $hrManage + [Roles::HRBP => self::READ, Roles::AUDITOR => self::READ]],
+            // Talent gelombang 1 (laporan 9): penilaian potensi, talent review, Nine Box — data sensitif
+            'potentialassessments' => ['title' => 'Asesmen Potensi', 'table' => 'potential_assessments', 'url' => 'talent/potential-assessments', 'parent' => 'talenta', 'icon' => 'fa fa-clipboard-check', 'title_id' => 'Asesmen Potensi',
+                'access' => $hrManage + [Roles::TALENT_COMMITTEE => self::FULL]],
+            'talentreviews' => ['title' => 'Talent Review', 'table' => 'talent_reviews', 'url' => 'talent/reviews', 'parent' => 'talenta', 'icon' => 'fa fa-th', 'title_id' => 'Talent Review',
+                'access' => $hrManage + [Roles::TALENT_COMMITTEE => self::FULL]],
+            // Talent gelombang 2 (laporan 10): talent pool
+            'talentpools' => ['title' => 'Talent Pool', 'table' => 'talent_pools', 'url' => 'talent/pools', 'parent' => 'talenta', 'icon' => 'fa fa-object-group', 'title_id' => 'Talent Pool',
+                'access' => $hrManage + [Roles::TALENT_COMMITTEE => self::FULL]],
+            'talentpoolreport' => ['title' => 'Laporan Talent Pool', 'table' => 'talent_pool_members', 'url' => 'talent/pools/report', 'parent' => 'talenta', 'icon' => 'fa fa-chart-pie', 'title_id' => 'Laporan Talent Pool',
+                'access' => $hrManage + [Roles::TALENT_COMMITTEE => self::READ, Roles::EXECUTIVE => self::READ, Roles::HRBP => self::READ, Roles::DEPARTMENT_HEAD => self::READ]],
+            'nineboxreport' => ['title' => 'Laporan Nine Box', 'table' => 'talent_review_entries', 'url' => 'talent/nine-box', 'parent' => 'talenta', 'icon' => 'fa fa-table', 'title_id' => 'Laporan Nine Box',
+                'access' => $hrManage + [Roles::TALENT_COMMITTEE => self::READ, Roles::EXECUTIVE => self::READ, Roles::HRBP => self::READ, Roles::DEPARTMENT_HEAD => self::READ]],
             'myassessments' => ['title' => 'Asesmen Saya', 'table' => 'assessment_raters', 'url' => 'competency/my-assessments', 'parent' => 'layanan', 'icon' => 'fa fa-star', 'title_id' => 'Asesmen Saya',
                 'access' => self::everyone(), 'register_module' => false],
 

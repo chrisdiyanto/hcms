@@ -164,3 +164,16 @@ Route::put('development/sessions/participants/{participant}', 'Development\Sessi
 Route::get('development/effectiveness', 'Development\EffectivenessController@index');
 Route::get('ess/trainings', 'Employee\TrainingsController@index');
 Route::post('ess/trainings/{participant}/reaction', 'Employee\TrainingsController@react')->whereNumber('participant')->middleware('throttle:10,1,ess-reaction');
+
+// Talent gelombang 1 (laporan 9): penilaian potensi, talent review, Nine Box
+Route::get('talent/potential-assessments', 'Talent\PotentialAssessmentsController@index');
+Route::get('talent/potential-assessments/create', 'Talent\PotentialAssessmentsController@create');
+Route::post('talent/potential-assessments', 'Talent\PotentialAssessmentsController@store');
+Route::post('talent/potential-assessments/{id}/cancel', 'Talent\PotentialAssessmentsController@cancel')->whereNumber('id');
+Route::get('talent/reviews', 'Talent\ReviewsController@index');
+Route::post('talent/reviews', 'Talent\ReviewsController@store');
+Route::get('talent/reviews/{id}', 'Talent\ReviewsController@show')->whereNumber('id');
+Route::post('talent/reviews/{id}/populate', 'Talent\ReviewsController@populate')->whereNumber('id');
+Route::post('talent/reviews/{id}/approve', 'Talent\ReviewsController@approve')->whereNumber('id');
+Route::put('talent/reviews/entries/{entry}', 'Talent\ReviewsController@decide')->whereNumber('entry');
+Route::get('talent/nine-box', 'Talent\NineBoxController@index');

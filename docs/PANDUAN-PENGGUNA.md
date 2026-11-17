@@ -92,6 +92,15 @@ Materi pelatihan Fase 4 gelombang 3, disusun per peran. Setiap sesi berisi **tuj
 **Kinerja (urutan tahap)**
 Kebijakan berversi → buka periode (kebijakan terkunci) → sasaran strategis → perencanaan → monitoring (mid-year wajib) → penilaian → kalibrasi per unit (alasan wajib) → umumkan rating sementara → keberatan → pengesahan final (snapshot tidak dapat diubah) → PIP. Ekspor rating dari halaman periode.
 
+## Sesi 4b — Talent review (HR & Talent Committee)
+
+1. **Instrumen Potensi**: pastikan ada versi berlaku.
+2. **Asesmen Potensi**: nilai setiap kriteria dengan bukti perilaku dan tingkat keyakinan. Hasil bersifat rahasia; setiap akses tercatat.
+3. **Talent Review**: buat review (periode kinerja yang sudah ditutup, unit, panel ≥ 2 orang). Peserta dan usulan kotak terisi otomatis; lengkapi potensi yang belum ada lalu klik *Perbarui data*.
+4. Panel menggeser kotak bila perlu (justifikasi wajib), menilai **risiko kehilangan** (rahasia, alasan wajib), dan menetapkan tindakan pengembangan.
+5. Pengesahan oleh pemegang izin Approve selain pembuat review. Setelah sah, review terkunci.
+6. **Laporan Nine Box**: sebaran agregat, per unit, pergerakan antar-siklus, keragaman. Penempatan di Nine Box bukan jaminan promosi.
+
 ## Sesi 5 — Eksekutif & analitik
 
 - **Ringkasan Eksekutif:** pegawai aktif, perubahan vs bulan lalu, bergabung/keluar, turnover, keterisian posisi, tren 12 bulan, komposisi, unit terbesar, posisi terbuka.

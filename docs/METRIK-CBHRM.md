@@ -127,9 +127,11 @@ Kesiapan adalah bahan pertimbangan, **bukan** rekomendasi atau keputusan penempa
 |---|---|---|
 | Skor potensi | Rata-rata tertimbang skor kriteria instrumen potensi yang berlaku; tingkat rendah / sedang / tinggi memakai ambang versi instrumen (bawaan 2,50 / 3,75 pada skala 1–5). | ✅ `PotentialInstruments::evaluate` |
 | Masa berlaku hasil potensi | Mengikuti instrumen (bawaan 24 bulan). | ✅ |
-| Sumbu kinerja Nine Box | rating final terakhir. **Tinggi** = Outstanding/Exceeds, **Sedang** = Meets, **Rendah** = Below/Unsatisfactory. Not rated tidak masuk Nine Box. | 📌 K7 |
-| Penomoran kotak | kotak 1 = kinerja rendah & potensi rendah … kotak 9 = kinerja tinggi & potensi tinggi. Nama kotak bisa diatur per tenant. | 📌 K7 |
-| Cakupan talent review | Pegawai yang direview ÷ pegawai yang memenuhi syarat review × 100. | 📌 |
+| Sumbu kinerja Nine Box | Rating final (status final, rated, revisi berlaku) pada periode kinerja yang dipilih untuk review. **Tinggi** = Outstanding/Exceeds, **Sedang** = Meets, **Rendah** = Below/Unsatisfactory; band kustom: dua band teratas = tinggi, ketiga = sedang, sisanya rendah. Not rated tidak masuk Nine Box. | ✅ `TalentReviews::performanceLevel` |
+| Penomoran kotak | Kotak = indeks potensi × 3 + indeks kinerja + 1 (rendah 0, sedang 1, tinggi 2): 1 Perlu perhatian, 2 Kontributor efektif, 3 Profesional andal, 4 Inkonsisten, 5 Pemain inti, 6 Performer tinggi, 7 Berlian kasar, 8 Bintang potensial, 9 Bintang. Kelompok laporan: talenta kunci 6/8/9, inti 2/3/5, perlu tindak lanjut 1/4/7. | ✅ `TalentReviews::box` |
+| Cakupan talent review | Peserta dengan data lengkap (rating final + potensi berlaku pada tanggal review) ÷ peserta review (pegawai aktif dalam cakupan/unit review). Kekurangan data dirinci: tanpa rating, tanpa potensi, keduanya. | ✅ Laporan Nine Box |
+| Pergerakan antar-siklus | Untuk pegawai di dua review sah berturut-turut: naik/tetap/turun menurut perubahan jumlah indeks kinerja + potensi kotak final. | ✅ Laporan Nine Box |
+| Keragaman talenta kunci | Porsi perempuan di talenta kunci dibanding porsi perempuan di seluruh pegawai Nine Box. | ✅ Laporan Nine Box |
 
 ---
 
@@ -182,3 +184,4 @@ Semua keputusan **disetujui pemilik produk pada 2026-11-17** sesuai rekomendasi.
 | 2026-11-18 | §5 TNA diterapkan (Rilis 2 gelombang 1): saran otomatis dari gap ≤ −1 dan PIP; tanpa gap kompetensi, prioritas ditetapkan pengaju/peninjau. |
 | 2026-11-18 | §6 IDP diterapkan (Rilis 2 gelombang 2): kemajuan, lewat tenggat, gap tertutup dari gap terkini. |
 | 2026-11-18 | §7 pelatihan & efektivitas diterapkan (Rilis 2 gelombang 3); aturan indikasi program ditambahkan dengan ambang awal. |
+| 2026-11-18 | §9 diterapkan (Talent gelombang 1): nama kotak, kelompok laporan, pergerakan, keragaman; pemetaan band kustom. |
