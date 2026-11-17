@@ -40,6 +40,10 @@ Materi pelatihan Fase 4 gelombang 3, disusun per peran. Setiap sesi berisi **tuj
 **Layanan Mandiri › Usulan Pelatihan**
 - Usulkan kebutuhan pelatihan untuk diri sendiri (atau bawahan langsung bila Anda atasan): kompetensi atau topik, alasan, urgensi. HR meninjau; status dan catatan HR tampil di halaman yang sama.
 
+**Layanan Mandiri › IDP Saya**
+- Buat IDP tahun berjalan: draft otomatis berisi kebutuhan pelatihan Anda yang disetujui HR dan saran dari asesmen kompetensi. Tambah/ubah aktivitas (bisa memilih dari katalog), isi sasaran yang diukur dan tenggat, lalu **ajukan ke atasan**. Bila dikembalikan, perbaiki sesuai catatan dan ajukan ulang.
+- Setelah disetujui: perbarui status setiap aktivitas. Aktivitas **selesai wajib disertai bukti** (nomor sertifikat, laporan, catatan mentor). IDP selesai otomatis bila semua aktivitas selesai atau dibatalkan.
+
 **Layanan Mandiri › Tugas Persetujuan & Delegasi**
 - Persetujuan yang menunggu Anda muncul di Tugas Persetujuan. Saat cuti, delegasikan persetujuan ke rekan untuk periode tertentu.
 
@@ -52,6 +56,7 @@ Materi pelatihan Fase 4 gelombang 3, disusun per peran. Setiap sesi berisi **tuj
 - **Keberatan:** sebagai atasan dari atasan, putuskan keberatan bawahan tidak langsung dengan alasan.
 - **PIP:** buat rencana perbaikan untuk rating Below/Unsatisfactory; tandai selesai, diperpanjang, atau tidak berhasil.
 - **Asesmen kompetensi:** nilai bawahan pada Asesmen Saya.
+- **IDP tim:** setujui atau kembalikan IDP bawahan di Tugas Persetujuan; pantau dan beri catatan di IDP Saya › IDP tim saya.
 - **Department Head:** Dasbor Kinerja, Laporan Kompetensi, Kesiapan Posisi, dan Ringkasan Eksekutif hanya menampilkan unit dalam cakupan Anda.
 
 ## Sesi 3 — HR: organisasi, pegawai, migrasi data
@@ -75,6 +80,8 @@ Materi pelatihan Fase 4 gelombang 3, disusun per peran. Setiap sesi berisi **tuj
 1. Tab *Saran otomatis*: saran dari gap kompetensi ≤ −1 dan PIP (diperbarui tiap Minggu atau tombol *Perbarui saran*). Setujui atau tolak (alasan wajib) — saran belum dihitung sebagai TNA.
 2. Tab *Diajukan*: usulan pegawai/atasan dan kebutuhan organisasi. Anda tidak dapat memutus kebutuhan yang Anda ajukan sendiri.
 3. *Rincian*: kaitkan dengan sasaran strategis (skor prioritas ×1,5), isi intervensi, biaya, tenggat, penanggung jawab.
+5. **Katalog Intervensi**: daftar pelatihan, coaching, mentoring, penugasan, dan sertifikasi beserta kompetensi sasaran dan biaya; dipakai pegawai saat menyusun IDP.
+6. **Rekap IDP**: cakupan IDP, kemajuan, aktivitas lewat tenggat, biaya rencana vs realisasi, dan gap yang belum tertutup setelah aktivitas selesai.
 4. *Laporan TNA*: kebutuhan disetujui per sumber, prioritas, kompetensi, unit; kebutuhan terbuka & berulang; perkiraan biaya.
 
 **Kinerja (urutan tahap)**

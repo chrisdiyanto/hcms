@@ -120,6 +120,8 @@ class PageBenchmarkTest extends TestCase
             '/competency/job-profiles',
             '/development/needs?status=suggested',
             '/development/needs/report',
+            '/development/idps',
+            '/development/interventions',
             '/performance/periods/'.$periods['KIN-2026'],
             '/performance/plans/'.$plan.'/monitoring',
             '/executive/analytic/performance?period='.$periods['KIN-2026'],

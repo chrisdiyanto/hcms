@@ -2,6 +2,7 @@
 
 namespace App\Domain\Workflow;
 
+use App\Domain\Development\Workflow\IdpSubject;
 use App\Domain\Employee\Workflow\EmployeeChangeRequestSubject;
 use App\Domain\Performance\Workflow\KpiChangeRequestSubject;
 use App\Domain\Performance\Workflow\PerformancePlanSubject;
@@ -45,6 +46,13 @@ final class WorkflowRegistry
             KpiChangeRequestSubject::CODE => [
                 'name' => 'Perubahan KPI (change request)',
                 'subject' => KpiChangeRequestSubject::class,
+                'steps' => [
+                    ['name' => 'Persetujuan atasan langsung', 'approver' => ['type' => 'supervisor', 'levels' => 1], 'sla_hours' => 72],
+                ],
+            ],
+            IdpSubject::CODE => [
+                'name' => 'Persetujuan rencana pengembangan individu (IDP)',
+                'subject' => IdpSubject::class,
                 'steps' => [
                     ['name' => 'Persetujuan atasan langsung', 'approver' => ['type' => 'supervisor', 'levels' => 1], 'sla_hours' => 72],
                 ],

@@ -112,6 +112,13 @@ final class HcmsModules
                 'access' => $hrManage + [Roles::TRAINING_ADMIN => self::FULL, Roles::HRBP => self::READ, Roles::DEPARTMENT_HEAD => self::READ, Roles::AUDITOR => self::READ]],
             'tnareport' => ['title' => 'Laporan TNA', 'table' => 'training_needs', 'url' => 'development/needs/report', 'parent' => 'pengembangan', 'icon' => 'fa fa-chart-area', 'title_id' => 'Laporan TNA',
                 'access' => $hrManage + $orgRead + [Roles::TRAINING_ADMIN => self::READ]],
+            // Rilis 2 gelombang 2: katalog intervensi & IDP
+            'interventions' => ['title' => 'Katalog Intervensi', 'table' => 'development_interventions', 'url' => 'development/interventions', 'parent' => 'pengembangan', 'icon' => 'fa fa-book', 'title_id' => 'Katalog Intervensi',
+                'access' => $hrManage + [Roles::TRAINING_ADMIN => self::FULL, Roles::HRBP => self::READ, Roles::LINE_MANAGER => self::READ, Roles::EMPLOYEE => self::READ]],
+            'idpadmin' => ['title' => 'Rekap IDP', 'table' => 'idps', 'url' => 'development/idps', 'parent' => 'pengembangan', 'icon' => 'fa fa-map-signs', 'title_id' => 'Rekap IDP',
+                'access' => $hrManage + [Roles::TRAINING_ADMIN => self::READ, Roles::HRBP => self::READ, Roles::DEPARTMENT_HEAD => self::READ, Roles::AUDITOR => self::READ]],
+            'myidp' => ['title' => 'IDP Saya', 'table' => 'idps', 'url' => 'ess/idp', 'parent' => 'layanan', 'icon' => 'fa fa-tasks', 'title_id' => 'IDP Saya',
+                'access' => self::everyone(), 'register_module' => false],
             'mytrainingrequests' => ['title' => 'Usulan Pelatihan', 'table' => 'training_needs', 'url' => 'ess/training-requests', 'parent' => 'layanan', 'icon' => 'fa fa-hand-paper', 'title_id' => 'Usulan Pelatihan',
                 'access' => self::everyone(), 'register_module' => false],
             'mycareer' => ['title' => 'Aspirasi Karier Saya', 'table' => 'employee_career_aspirations', 'url' => 'ess/career', 'parent' => 'layanan', 'icon' => 'fa fa-compass', 'title_id' => 'Aspirasi Karier Saya',

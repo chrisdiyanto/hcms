@@ -60,6 +60,10 @@ class EssController extends Controller
             'riwayat_skor_kompetensi' => $rows('employee_competency_history', 'assessed_at'),
             'riwayat_kesesuaian_jabatan' => $rows('job_fit_history', 'computed_at'),
             'aspirasi_karier' => $rows('employee_career_aspirations', 'submitted_at'),
+            'kebutuhan_pelatihan' => $rows('training_needs', 'period_year'),
+            'idp' => $rows('idps', 'period_year'),
+            'aktivitas_idp' => TenantScope::table('idp_activities')->whereIn('idp_id', TenantScope::table('idps')->where('employee_id', $id)->select('id'))
+                ->orderBy('id')->get()->map(fn ($r) => collect((array) $r)->except(['tenant_id'])->all())->all(),
             'riwayat_gap_kompetensi' => $rows('competency_gap_history', 'job_fit_history_id'),
             'rencana_kinerja' => TenantScope::table('performance_plans')->where('employee_id', $id)->get()->map(fn ($p) => (array) $p)->all(),
             'kpi' => TenantScope::table('performance_objectives')->whereIn('plan_id', $planIds)->get()->map(fn ($o) => (array) $o)->all(),

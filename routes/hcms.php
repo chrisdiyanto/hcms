@@ -143,3 +143,12 @@ Route::get('development/needs/{id}/edit', 'Development\NeedsController@edit')->w
 Route::put('development/needs/{id}', 'Development\NeedsController@update')->whereNumber('id');
 Route::get('ess/training-requests', 'Employee\TrainingRequestsController@index');
 Route::post('ess/training-requests', 'Employee\TrainingRequestsController@store')->middleware('throttle:10,1,ess-training');
+
+// Rilis 2 gelombang 2: katalog intervensi & IDP
+Route::resource('development/interventions', 'Development\InterventionsController')->except('show')->parameters(['interventions' => 'id']);
+Route::get('development/idps', 'Development\IdpsController@index');
+Route::get('ess/idp', 'Employee\IdpController@index');
+Route::post('ess/idp', 'Employee\IdpController@store');
+Route::get('ess/idp/{id}', 'Employee\IdpController@show')->whereNumber('id');
+Route::put('ess/idp/{id}', 'Employee\IdpController@update')->whereNumber('id');
+Route::put('ess/idp/activities/{activity}', 'Employee\IdpController@activity')->whereNumber('activity');

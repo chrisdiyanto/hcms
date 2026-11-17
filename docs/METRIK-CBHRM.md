@@ -89,9 +89,9 @@ Kesiapan adalah bahan pertimbangan, **bukan** rekomendasi atau keputusan penempa
 
 | Metrik | Definisi | Status |
 |---|---|---|
-| Kemajuan IDP | Aktivitas selesai ÷ aktivitas direncanakan (yang dibatalkan tidak dihitung). | 📌 |
-| Aktivitas lewat tenggat | Aktivitas belum selesai dengan tenggat < tanggal acuan. | 📌 |
-| Gap tertutup | Gap pada asesmen berikutnya ≥ 0 untuk kompetensi sasaran IDP. Dibaca dari riwayat (P1). | 📌 |
+| Kemajuan IDP | Aktivitas selesai ÷ aktivitas direncanakan (yang dibatalkan tidak dihitung). | ✅ Rekap IDP (`development/idps`) |
+| Aktivitas lewat tenggat | Aktivitas belum selesai dengan tenggat < tanggal acuan. | ✅ Rekap IDP & IDP pegawai (label "lewat tenggat") |
+| Gap tertutup | Untuk aktivitas IDP berstatus selesai yang punya kompetensi sasaran: gap terkini kompetensi itu (`competency_gaps`) ≥ 0 = tertutup, < 0 = belum tertutup, tanpa data = belum diukur. Bukan klaim sebab-akibat satu aktivitas. | ✅ Rekap IDP |
 
 ---
 
@@ -179,3 +179,4 @@ Semua keputusan **disetujui pemilik produk pada 2026-11-17** sesuai rekomendasi.
 | 2026-11-17 | K9 diperinci: penyamaran hanya bagi pengguna tanpa hak membuka data individual; diterapkan di dashboard executive, Dasbor Kinerja, dan Laporan Kompetensi. |
 | 2026-11-18 | K4 diterapkan di Kesiapan Posisi; definisi cakupan profil jabatan & job family terpetakan penuh ditetapkan. |
 | 2026-11-18 | §5 TNA diterapkan (Rilis 2 gelombang 1): saran otomatis dari gap ≤ −1 dan PIP; tanpa gap kompetensi, prioritas ditetapkan pengaju/peninjau. |
+| 2026-11-18 | §6 IDP diterapkan (Rilis 2 gelombang 2): kemajuan, lewat tenggat, gap tertutup dari gap terkini. |
