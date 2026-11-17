@@ -120,6 +120,12 @@ class PageBenchmarkTest extends TestCase
             '/performance/dashboard?period='.$periods['KIN-2025'],
             '/performance/periods/'.$periods['KIN-2025'].'/ratings',
             '/core/audit',
+            '/executive/dashboard',
+            '/executive/analytics/turnover',
+            '/executive/analytics/promotions',
+            '/executive/analytics/deib',
+            '/executive/analytics/workforce',
+            '/executive/analytics/development',
         ]);
         $this->assertNotEmpty(self::$results);
     }

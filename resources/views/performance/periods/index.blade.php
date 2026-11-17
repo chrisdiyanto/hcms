@@ -17,7 +17,7 @@
 						<td><code>{{ $p->code }}</code></td>
 						<td>{{ $p->name }}</td>
 						<td class="small">{{ $p->start_date }} – {{ $p->end_date }}</td>
-						<td class="small">{{ $snap ? 'v'.$snap['_version'].' (terkunci)' : '—' }}</td>
+						<td class="small">{{ $snap ? (isset($snap['_version']) ? 'v'.$snap['_version'].' (terkunci)' : 'Terkunci') : '—' }}</td>
 						<td><span class="badge {{ $p->status === 'draft' ? 'bg-secondary' : ($p->status === 'closed' ? 'bg-dark' : 'bg-info') }}">{{ $statuses[$p->status] }}</span></td>
 						<td class="text-end"><a href="{{ url('performance/periods/'.$p->id) }}" class="btn btn-sm btn-outline-primary">Detail</a></td>
 					</tr>

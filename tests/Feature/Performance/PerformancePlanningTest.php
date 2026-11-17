@@ -166,6 +166,17 @@ class PerformancePlanningTest extends TestCase
         $this->assertTrue(DB::table('audit_logs')->where('auditable_type', 'performance_periods')->where('description', 'like', '%dikunci%')->exists());
     }
 
+    public function test_period_list_handles_policy_snapshots_without_version_metadata(): void
+    {
+        $this->publishDefaultPolicy();
+        $period = $this->openPeriod();
+        $snapshot = json_decode(DB::table('performance_periods')->where('id', $period)->value('policy_snapshot'), true);
+        unset($snapshot['_version']);
+        DB::table('performance_periods')->where('id', $period)->update(['policy_snapshot' => json_encode($snapshot)]);
+
+        $this->asHr()->get('/performance/periods')->assertOk()->assertSee('Terkunci');
+    }
+
     public function test_rencana_kpi_diajukan_dikembalikan_lalu_disetujui_atasan(): void
     {
         $this->publishDefaultPolicy();

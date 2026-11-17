@@ -41,10 +41,20 @@ final class DataScope
 
         $today = now()->toDateString();
 
-        // Unit penugasan sendiri selalu termasuk, beserta bawahannya
-        $assigned = DB::table('user_unit')->where('id_user', $userId)->whereNotNull('id_unit')
+        // Unit penugasan sendiri selalu termasuk, beserta bawahannya:
+        // tabel lama Sximo (user_unit) dan posisi yang sedang dijabat lewat data pegawai
+        // (penugasan primer, rangkap, atau Plt. yang aktif hari ini)
+        $legacy = DB::table('user_unit')->where('id_user', $userId)->whereNotNull('id_unit')
             ->where(fn ($q) => $q->whereNull('end_date')->orWhere('end_date', '>=', $today))
-            ->pluck('id_unit')->map(fn ($id) => (int) $id)->all();
+            ->pluck('id_unit');
+        $held = TenantScope::table('employee_assignments')
+            ->join('employees', 'employees.id', '=', 'employee_assignments.employee_id')
+            ->join('positions', 'positions.id', '=', 'employee_assignments.position_id')
+            ->where('employees.user_id', $userId)->where('employees.status', 'active')->whereNull('employees.deleted_at')
+            ->where('employee_assignments.effective_from', '<=', $today)
+            ->where(fn ($q) => $q->whereNull('employee_assignments.effective_to')->orWhere('employee_assignments.effective_to', '>=', $today))
+            ->pluck('positions.unit_id');
+        $assigned = $legacy->merge($held)->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
 
         $grants = TenantScope::table('user_data_scopes')->where('user_id', $userId)
             ->where(fn ($q) => $q->whereNull('valid_from')->orWhere('valid_from', '<=', $today))

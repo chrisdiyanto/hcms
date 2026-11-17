@@ -91,7 +91,7 @@ final class HcmsModules
                 'access' => $hrManage + $orgRead + [Roles::LINE_MANAGER => self::READ]],
             'myplans' => ['title' => 'Rencana Kinerja Saya', 'table' => 'performance_plans', 'url' => 'performance/my-plans', 'parent' => 'layanan', 'icon' => 'fa fa-bullseye', 'title_id' => 'Rencana Kinerja Saya',
                 'access' => self::everyone(), 'register_module' => false],
-            'perfdashboard' => ['title' => 'Dasbor Kinerja', 'table' => 'performance_ratings', 'url' => 'performance/dashboard', 'parent' => 'kinerja', 'icon' => 'fa fa-chart-pie', 'title_id' => 'Dasbor Kinerja',
+            'perfdashboard' => ['title' => 'Dasbor Kinerja', 'table' => 'performance_ratings', 'url' => 'executive/analytic/performance', 'parent' => 'kinerja', 'icon' => 'fa fa-chart-pie', 'title_id' => 'Dasbor Kinerja',
                 'access' => $hrManage + $orgRead + [Roles::LINE_MANAGER => self::READ]],
             'myevaluations' => ['title' => 'Penilaian Kinerja', 'table' => 'performance_assessments', 'url' => 'performance/assessments', 'parent' => 'layanan', 'icon' => 'fa fa-clipboard-check', 'title_id' => 'Penilaian Kinerja',
                 'access' => self::everyone(), 'register_module' => false],
@@ -109,6 +109,8 @@ final class HcmsModules
             // Employee Management — isi daftar tetap dibatasi data scope tiap peran
             'employees' => ['title' => 'Pegawai', 'table' => 'employees', 'url' => 'employees', 'parent' => 'kepegawaian', 'icon' => 'fa fa-id-card', 'title_id' => 'Pegawai',
                 'access' => $hrManage + $orgRead + [Roles::LINE_MANAGER => self::READ, Roles::EMPLOYEE => self::READ]],
+            'execdashboard' => ['title' => 'Ringkasan Eksekutif', 'table' => 'employees', 'url' => 'executive/dashboard', 'parent' => 'kepegawaian', 'icon' => 'fa fa-chart-pie', 'title_id' => 'Ringkasan Eksekutif',
+                'access' => $hrManage + $orgRead],
         ];
     }
 

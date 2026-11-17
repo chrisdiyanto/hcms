@@ -166,7 +166,9 @@ Urutan pengerjaan:
 
 **Status 2026-11-17 — gelombang 1 selesai (113 tes lulus; diuji di browser di tenant DEMO):** menu "Kompetensi"; kamus berversi (`competency_framework_versions`: draft → berlaku → pensiun; hanya draft yang bisa diubah; draft baru menyalin versi berlaku; terbit butuh izin Approve dan setiap kompetensi aktif wajib punya level 1–5 dengan 2–4 indikator; saat terbit profil job & posisi dipindah ke versi baru berdasarkan kode); kategori Core/Leadership/Functional/Digital otomatis per tenant; profil kompetensi job (level wajib + kritikalitas 3/2/1) dan override posisi (ubah, kecualikan, tambahan khusus posisi, alasan wajib) via `CompetencyProfile`; kalkulator murni `JobFitCalculator` (contoh blueprint = 71,3%, kelebihan dibatasi 100%, band 90/75 dapat dikonfigurasi) dan `RaterAggregator` (bobot 50/20/20/10, rekan/bawahan < 3 penilai gugur dan bobotnya dibagi ulang, assessment center menggantikan). Bug ditemukan tes: pemindahan profil saat terbit diam-diam tidak memindah (pluck dua kolom `id`).
 
-**Status 2026-11-17 — gelombang 2 selesai (117 tes lulus; diuji di browser di tenant DEMO):** layanan `CompetencyAssessment` — HR membuka asesmen per pegawai (kompetensi = profil posisi primer saat ini; satu asesmen berjalan per pegawai); penilai diri sendiri dari akun pegawai, atasan otomatis dari solid line (naik bila kosong), rekan/bawahan/HR dipilih; notifikasi in-app ke penilai. Menu Layanan Mandiri › "Asesmen Saya": daftar tugas penilaian, form skor 1–5 dengan deskripsi level & indikator dari kamus (Alpine.js) + bukti perilaku, profil kompetensi & JFI sendiri. Kompetensi › "Asesmen Kompetensi" (HR/Asesor): rekap per kelompok penilai tanpa skor individual rekan/bawahan, input hasil assessment center, tutup → `employee_competencies` (berlaku 24 bulan, rincian per kelompok), `competency_gaps`, `job_fit_results`, draf IDP (`competency_idp_suggestions`) untuk kompetensi kritis dengan gap negatif; batal dengan alasan. Bobot penilai & batas band dapat diatur per tenant di `tenant_settings` (`competency.rater_weights`, `competency.jfi_bands`). Kompetensi › "Laporan Kompetensi": sebaran kesiapan, gap terbesar, heatmap gap unit × kompetensi, profil individu (radar wajib vs aktual, riwayat) — dibatasi data scope. Grafik memakai ECharts 6.1 via Vite (`resources/js/charts.js`, hanya dimuat di halaman laporan); `echarts-all.js` 2.2.7 bawaan Sximo tidak dipakai. **Belum:** Position Readiness untuk kandidat posisi lain (fungsi `fitFor` sudah ada), job batch penghitungan ulang saat profil berubah/skor kedaluwarsa, pengingat batas waktu penilai, kalibrasi; gerbang: satu job family pilot terpetakan penuh (saat ini DEMO baru 1 kompetensi).
+**Status 2026-11-17 — gelombang 2 selesai (117 tes lulus; diuji di browser di tenant DEMO):** layanan `CompetencyAssessment` — HR membuka asesmen per pegawai (kompetensi = profil posisi primer saat ini; satu asesmen berjalan per pegawai); penilai diri sendiri dari akun pegawai, atasan otomatis dari solid line (naik bila kosong), rekan/bawahan/HR dipilih; notifikasi in-app ke penilai. Menu Layanan Mandiri › "Asesmen Saya": daftar tugas penilaian, form skor 1–5 dengan deskripsi level & indikator dari kamus (Alpine.js) + bukti perilaku, profil kompetensi & JFI sendiri. Kompetensi › "Asesmen Kompetensi" (HR/Asesor): rekap per kelompok penilai tanpa skor individual rekan/bawahan, input hasil assessment center, tutup → `employee_competencies` (berlaku 24 bulan, rincian per kelompok), `competency_gaps`, `job_fit_results`, draf IDP (`competency_idp_suggestions`) untuk kompetensi kritis dengan gap negatif; batal dengan alasan. Bobot penilai & batas band dapat diatur per tenant di `tenant_settings` (`competency.rater_weights`, `competency.jfi_bands`). Kompetensi › "Laporan Kompetensi": sebaran kesiapan, gap terbesar, heatmap gap unit × kompetensi, profil individu (radar wajib vs aktual, riwayat) — dibatasi data scope. Grafik memakai ECharts 6.1 via Vite (`resources/js/charts.js`, hanya dimuat di halaman laporan); `echarts-all.js` 2.2.7 bawaan Sximo tidak dipakai. **Belum:** Position Readiness kandidat terhadap posisi selain posisi saat ini (fungsi `fitFor` sudah ada); job batch penghitungan ulang saat profil berubah/skor kedaluwarsa; pengingat tenggat penilai; kalibrasi asesmen; gerbang: satu job family pilot terpetakan penuh (saat ini DEMO baru 1 kompetensi).
+
+**Penyelesaian backlog Fase 2:** Position Readiness menjadi laporan per posisi sasaran yang membandingkan kandidat internal berdasarkan JFI/band, kompetensi kritis yang belum terpenuhi, dan tanggal asesmen; kandidat dibatasi data scope dan laporan menandai skor kedaluwarsa. Tambahkan batch penghitungan ulang JFI/gap setelah perubahan profil atau kedaluwarsa hasil, pengingat tenggat penilai, serta kalibrasi asesmen dengan alasan dan jejak perubahan. Keluaran ini melengkapi laporan gap yang sudah tersedia dan menjadi masukan terstruktur untuk TNA, IDP, talent review, dan suksesi.
 
 **Gerbang keluar:** satu job family pilot terpetakan penuh.
 
@@ -193,7 +195,7 @@ Urutan pengerjaan:
 
 **Status 2026-11-17 — gelombang 2 (monitoring) selesai (136 tes lulus; diuji di browser di tenant DEMO dengan rina.demo & demo.admin):** halaman Monitoring per rencana (`performance/plans/{id}/monitoring`) dengan peran pemilik / atasan / HR: pegawai mencatat realisasi per KPI (`performance_updates`: angka, status milestone dengan tanggal selesai → faktor keterlambatan, atau skor rubrik), capaian dihitung dengan kebijakan yang dikunci, proyeksi skor What; bukti (`performance_evidences`) disimpan privat di `storage/app/tenants/{tenant}/performance/{rencana}/` dengan nama acak, tipe & ukuran dibatasi, unduhan tercatat di audit. Check-in berkala & mid-year review (`performance_checkins`, satu mid-year per rencana, diselesaikan atasan dengan catatan, notifikasi in-app); periode hanya bisa masuk tahap Penilaian bila semua rencana yang disetujui sudah menyelesaikan mid-year review. Perubahan KPI setelah disetujui lewat `kpi_change_requests` + workflow `kpi_change_request` (atasan): KPI lama disimpan di `performance_plan_versions`, KPI yang dihapus dipensiunkan (`retired_at`, realisasi tetap ada), tipe capaian yang diganti = KPI baru, target yang diubah → capaian realisasi dihitung ulang. Layanan Mandiri › "Kinerja Tim Saya" untuk atasan (bawahan langsung, status rencana, proyeksi, mid-year). Editor KPI dipisah menjadi partial `performance/plans/_kpi_editor` (dipakai rencana & change request). **Catatan:** zona waktu aplikasi masih UTC (bawaan master) sehingga "hari ini" tertinggal 7 jam dari WIB.
 
-**Status 2026-11-17 — gelombang 3 selesai; Fase 3 selesai, gerbang keluar terpenuhi (138 tes lulus; `PerformanceCycleTest` mensimulasikan satu siklus penuh, dan siklus yang sama dijalankan di browser pada tenant DEMO):** kebijakan ditambah item perilaku (How, default 5 nilai inti), rubrik Kontribusi tambahan 1–5, dan jendela keberatan (kebijakan periode lama dilengkapi default). Membuka tahap Penilaian membuat `performance_assessments` untuk setiap rencana yang disetujui: penilaian diri (informatif) → penilaian atasan (skor How & Kontribusi yang dihitung, ringkasan wajib) → review atasan dari atasan (setuju / kembalikan dengan catatan; tanpa atasan dari atasan = selesai otomatis). Skor: What dari realisasi terakhir (tanpa realisasi = 0), How = rata-rata skor atasan → konversi, Kontribusi → konversi, bobot override per level jabatan (grade posisi). Tahap Kalibrasi butuh semua penilaian selesai; `calibration_sessions` per unit (beserta turunannya) dengan papan drag & drop jQuery UI sortable + ringkasan distribusi Alpine; pemindahan band wajib beralasan, skor disesuaikan ke batas band tujuan, tercatat di `calibration_adjustments`. Pengesahan (sesi kalibrasi harus ditutup): `performance_ratings` per pegawai (prorata antar-rencana, not rated bila masa kurang), `performance_snapshots` immutable (trigger MySQL, payload `longText` + SHA-256, memuat kebijakan, KPI & versi lama, realisasi, penilaian, kalibrasi), periode ditutup, notifikasi. Keberatan (`performance_appeals`) sekali per periode dalam jendela kebijakan, diputus atasan dari atasan atau HR — penilai & pegawai sendiri tidak boleh memutus; dikabulkan = revisi rating + snapshot baru. PIP (`performance_improvement_plans`) untuk rating Below/Unsatisfactory dengan atasan sebagai penanggung jawab (selesai/diperpanjang/tidak berhasil). Kinerja › Dasbor Kinerja (progres tahap, sebaran rating, rata-rata per unit, sesuai data scope). Menu Layanan Mandiri: Penilaian Kinerja, Rating Kinerja Saya, Keberatan Rating, Rencana Perbaikan (PIP). **Belum:** 360 feedback informatif, notifikasi email, ekspor laporan rating, pengingat tenggat tahap.
+**Status 2026-11-17 — gelombang 3 selesai; Fase 3 selesai, gerbang keluar terpenuhi (138 tes lulus; `PerformanceCycleTest` mensimulasikan satu siklus penuh, dan siklus yang sama dijalankan di browser pada tenant DEMO):** kebijakan ditambah item perilaku (How, default 5 nilai inti), rubrik Kontribusi tambahan 1–5, dan jendela keberatan (kebijakan periode lama dilengkapi default). Membuka tahap Penilaian membuat `performance_assessments` untuk setiap rencana yang disetujui: penilaian diri (informatif) → penilaian atasan (skor How & Kontribusi yang dihitung, ringkasan wajib) → review atasan dari atasan (setuju / kembalikan dengan catatan; tanpa atasan dari atasan = selesai otomatis). Skor: What dari realisasi terakhir (tanpa realisasi = 0), How = rata-rata skor atasan → konversi, Kontribusi → konversi, bobot override per level jabatan (grade posisi). Tahap Kalibrasi butuh semua penilaian selesai; `calibration_sessions` per unit (beserta turunannya) dengan papan drag & drop jQuery UI sortable + ringkasan distribusi Alpine; pemindahan band wajib beralasan, skor disesuaikan ke batas band tujuan, tercatat di `calibration_adjustments`. Pengesahan (sesi kalibrasi harus ditutup): `performance_ratings` per pegawai (prorata antar-rencana, not rated bila masa kurang), `performance_snapshots` immutable (trigger MySQL, payload `longText` + SHA-256, memuat kebijakan, KPI & versi lama, realisasi, penilaian, kalibrasi), periode ditutup, notifikasi. Keberatan (`performance_appeals`) sekali per periode dalam jendela kebijakan, diputus atasan dari atasan atau HR — penilai & pegawai sendiri tidak boleh memutus; dikabulkan = revisi rating + snapshot baru. PIP (`performance_improvement_plans`) untuk rating Below/Unsatisfactory dengan atasan sebagai penanggung jawab (selesai/diperpanjang/tidak berhasil). Kinerja › Dasbor Kinerja (progres tahap, sebaran rating, rata-rata per unit, sesuai data scope). Menu Layanan Mandiri: Penilaian Kinerja, Rating Kinerja Saya, Keberatan Rating, Rencana Perbaikan (PIP). **Backlog opsional:** 360 feedback informatif, notifikasi email, dan pengingat tenggat tahap. Ekspor rating CSV sudah tersedia melalui `DataExport` (lihat status Fase 4).
 
 ### Fase 4 — Testing & Pilot (minggu 33–40)
 - Uji fungsional per kriteria MVP (blueprint bagian 22), uji isolasi tenant, uji SoD.
@@ -207,7 +209,109 @@ Urutan pengerjaan:
 **Status 2026-11-17 — gelombang 1 selesai (141 tes lulus):** matriks penerimaan di `docs/MVP-ACCEPTANCE.md` — 20 dari 21 kriteria ✅ dengan bukti tes otomatis, 1 🟡 (dasbor dengan peran ber-scope belum punya tes khusus). Celah yang ditutup: (1) **keberatan sebelum pengesahan** — rating kini diumumkan sementara (periode tahap `appeal`, `performance_ratings.status = provisional`), keberatan diputus, lalu **pengesahan final** setelah jendela keberatan berakhir dan semua keberatan diputus; snapshot immutable dibuat saat final (rating lama ber-snapshot dianggap final); (2) tes end-to-end prorata pegawai mutasi (181/184 hari → 85,04) dan masa kerja < 90 hari → not rated; (3) ekspor rating CSV lewat `DataExport` (izin ekspor, alasan, watermark, log, > 500 baris butuh Approve); (4) hak subjek data — Profil Saya › Unduh data saya (JSON berisi data pribadi termasuk identitas yang didekripsi, riwayat, kompetensi, kinerja; tercatat di log ekspor & audit); (5) review Octane — cache statis hanya metadata global, `TenantContext` scoped dan kini dibersihkan middleware saat terminate, tes regresi `RequestStateIsolationTest`; `composer audit` & `npm audit` bersih. **Gelombang 2 (2026-11-17, `docs/LOAD-TEST.md`):** `hcms:load-seed` (10.000 pegawai, 40.000 KPI, 80.000 realisasi, 200.000 audit di database `hcms_load`) + suite benchmark `phpunit.benchmark.xml`; 2 halaman melewati target dan diperbaiki (Laporan Kompetensi 3,4 → 0,7 dtk lewat agregasi SQL, JOIN alih-alih EXISTS+IN, cache berversi; Audit Trail 1,6 → 0,09 dtk lewat paginasi tanpa COUNT, indeks & cache daftar tipe); rekap periode & daftar rating dipaginasi. Semua 20 skenario p95 < 1 dtk (latensi server). Konkurensi 1.000 pengguna: skrip k6 `tests/Load/k6-hcms.js` untuk staging — Apache Laragon dev tanpa OPcache hanya ±17 req/dtk sehingga tidak representatif. **Gelombang 3:** skrip UAT, materi pelatihan, runbook dry run migrasi ×2 & pilot. Pentest independen oleh pihak ketiga setelah seluruh pengembangan selesai (keputusan 2026-11-17). **Keputusan 2026-11-17:** zona waktu aplikasi & sesi database `Asia/Jakarta` (+07:00); kunci Google Maps, Gemini, dan reCAPTCHA dirotasi pemilik akun.
 
 ### Rilis 2 — P1 (+24–30 minggu)
-Urutan disarankan: Offboarding & ER lengkap → Learning & Development (TNA, IDP, katalog, sertifikasi, evaluasi 4 tingkat) → Talent (potential assessment, talent review, Nine Box, talent pool) → Career (career path, promosi, mutasi) → Succession (posisi kritis, suksesor, bench strength) → People Analytics (tabel `analytics_*` snapshot bulanan, dashboard per portal, sembunyikan agregat < 5 orang) → Platform & Subscription (paket, kuota, tagihan) → fitur AI rekomendasi (draf IDP, saran pelatihan, ringkasan check-in) memakai `RagService`/Gemini dengan pseudonimisasi dan log versi model + prompt.
+Urutan disarankan: Offboarding & ER lengkap → Learning & Development → Talent → Career → Succession → People Analytics → Platform & Subscription → fitur AI rekomendasi.
+
+#### Learning & Development — TNA dan pengembangan
+- Menerima masukan gap kompetensi terverifikasi dari asesmen, hasil kinerja/PIP, kebutuhan organisasi, dan permintaan atasan/pegawai; HR dapat meninjau, menggabungkan, memprioritaskan, dan menyetujui kebutuhan.
+- Catat kebutuhan per pegawai, jabatan, unit, dan kompetensi dengan alasan, urgensi, periode, sumber, serta hubungan ke gap/IDP. Bedakan rekomendasi otomatis dari kebutuhan yang telah disetujui.
+- Kelola katalog intervensi (pelatihan, coaching, mentoring, penugasan, sertifikasi), penyedia, biaya, prasyarat, kapasitas, jadwal, dan kompetensi/level sasaran.
+- Buat rencana pengembangan individu (IDP) dari saran gap yang sudah ada; pegawai dan atasan menyusun sasaran, aktivitas, tenggat, serta bukti. Dukung persetujuan, status pelaksanaan, dan pencatatan sertifikasi.
+- Evaluasi efektivitas pelatihan empat tingkat: reaksi, pembelajaran, penerapan perilaku/kompetensi, dan dampak kinerja/organisasi; simpan baseline dan tindak lanjut agar hasil dapat dibandingkan.
+- Laporan: TNA menurut sumber/prioritas/unit/kompetensi; gap vs intervensi terencana; biaya dan realisasi pelatihan; partisipasi/sertifikasi; evaluasi efektivitas; kemajuan IDP. Tampilkan kebutuhan belum ditindaklanjuti dan hindari menyamakan saran IDP dengan TNA yang disetujui.
+
+#### Talent — asesmen potensi dan talent pool
+- Definisikan kriteria potensi dan instrumen asesmen berversi, terpisah dari rating kinerja dan asesmen kompetensi; catat bukti, assessor, tanggal, dan tingkat keyakinan.
+- Jalankan talent review per siklus dengan panel, catatan/justifikasi, kalibrasi, persetujuan, dan riwayat perubahan. Terapkan akses terbatas karena data potensi bersifat sensitif.
+- Sediakan Nine Box yang menggabungkan hasil kinerja final dengan potensi tervalidasi; kategori, ambang, dan aturan pemetaan dapat dikonfigurasi per tenant dan periode.
+- Talent pool memiliki kriteria masuk/keluar yang transparan, nominasi dan persetujuan, status kesiapan, kompetensi/gap utama, IDP/intervensi, minat karier, serta tanggal tinjau ulang. Keanggotaan tidak otomatis menjadi janji promosi.
+- Laporan: distribusi Nine Box per unit/kelompok jabatan, pergerakan antar-siklus, kandidat per pool dan level kesiapan, gap pengembangan, keragaman dan cakupan, serta riwayat keputusan; batasi agregat kecil dan akses baris individu sesuai data scope/izin sensitif.
+
+#### Career dan Succession — hubungan dengan talent
+- Petakan career path dan persyaratan posisi; gunakan Position Readiness dari Fase 2 untuk membandingkan kandidat terhadap posisi sasaran.
+- Tandai posisi kritis, rencana suksesi, kandidat utama/cadangan, kesiapan (siap sekarang/siap dalam jangka waktu tertentu), risiko kekosongan, dan tindakan pengembangan. Perubahan kandidat atau keputusan harus memiliki alasan dan jejak audit.
+- Laporan: kesiapan kandidat per posisi kritis, cakupan suksesi, bench strength, risiko posisi tanpa suksesor, serta gap yang perlu ditutup. Data talent pool dapat menjadi masukan, tetapi pemilihan suksesor tetap melalui persetujuan.
+
+#### People Analytics dan keluaran CBHRM lintas modul
+- Satukan laporan gap kompetensi/Position Readiness, TNA dan efektivitas pengembangan, kinerja, Nine Box/talent pool, serta succession ke tampilan analitik dengan definisi metrik dan periode yang konsisten.
+- Gunakan snapshot bulanan `analytics_*`, data scope tenant/unit, audit akses dan ekspor, serta penyamaran agregat berisi kurang dari 5 orang.
+- Kriteria penerimaan Rilis 2: kebutuhan dari gap dapat ditelusuri hingga intervensi dan evaluasinya; talent pool dapat ditelusuri ke asesmen dan keputusan talent review; laporan posisi kritis menunjukkan kandidat dan gap aktual; seluruh laporan memiliki filter periode/unit dan ekspor sesuai kebijakan akses.
+
+#### Urutan laporan CBHRM dan isi minimum
+Urutan berikut mengikuti ketergantungan data. Setiap laporan harus mendukung filter periode dan unit yang relevan, menampilkan waktu pembaruan serta definisi metrik, menghormati data scope dan izin sensitif, dan menyediakan ekspor yang tercatat sesuai kebijakan.
+
+1. **Profil kompetensi jabatan dan organisasi** — tersedia setelah standar jabatan/profil kompetensi dipetakan.
+   - Jabatan/posisi, unit, versi kerangka kompetensi, tanggal berlaku, dan pemilik profil.
+   - Kompetensi wajib, level yang disyaratkan, bobot/tingkat kritikalitas, serta indikator perilaku.
+   - Sumber persyaratan (job atau override posisi), perubahan versi, dan jabatan/posisi yang belum memiliki profil lengkap.
+   - Ringkasan cakupan pemetaan: jumlah posisi terpetakan dibanding total posisi aktif.
+
+2. **Profil dan asesmen kompetensi pegawai** — menjadi bukti kondisi aktual sebelum menghitung gap.
+   - Identitas kerja minimum, jabatan/posisi aktif, unit, tanggal asesmen, status masa berlaku, dan metode/kelompok penilai.
+   - Skor aktual per kompetensi beserta level, bukti perilaku, dan status validasi; rincian penilai individual hanya terlihat bagi pihak berwenang.
+   - Riwayat asesmen dan perubahan skor agar kemajuan dapat dibandingkan antarperiode.
+   - Kompetensi tanpa hasil asesmen atau dengan hasil kedaluwarsa harus ditandai, bukan dianggap bernilai nol.
+
+3. **Competency Gap Analysis** — membandingkan hasil aktual dengan persyaratan jabatan.
+   - Level aktual, level yang disyaratkan, selisih gap, bobot/criticality, dan status terpenuhi/belum terpenuhi per kompetensi.
+   - Ringkasan per pegawai, jabatan, unit, dan organisasi: jumlah gap, gap kritis, serta kompetensi dengan gap terbanyak/terbesar.
+   - JFI/band kesiapan dengan rumus, ambang, versi profil, dan tanggal asesmen yang digunakan.
+   - Penanda data tidak lengkap/kedaluwarsa, filter jabatan/unit/periode/band, serta drill-down ke profil pegawai sesuai izin.
+
+4. **Position Readiness** — membandingkan kandidat internal dengan posisi sasaran; jangan menyamakan kesiapan dengan keputusan promosi.
+   - Posisi sasaran dan persyaratan kompetensi versus aktual setiap kandidat; JFI/band dan tanggal/sumber data.
+   - Kompetensi wajib yang sudah terpenuhi, gap kritis, asesmen kedaluwarsa, serta estimasi/tingkat kesiapan yang definisinya dapat dijelaskan.
+   - Daftar kandidat terurut dengan filter unit, posisi sasaran, dan band; akses kandidat mengikuti data scope dan izin sensitif.
+   - Peringatan bahwa hasil adalah bahan pertimbangan, bukan rekomendasi otomatis atau keputusan penempatan.
+
+5. **Training Need Analysis (TNA)** — mengubah kebutuhan yang tervalidasi menjadi prioritas pengembangan.
+   - Kebutuhan menurut pegawai, kompetensi, jabatan/unit, periode, sumber (gap, kinerja/PIP, prioritas organisasi, atau permintaan), alasan, dan bukti.
+   - Prioritas/urgensi, dampak bila tidak ditangani, jumlah orang terdampak, serta status usulan → ditinjau → disetujui/ditolak → direncanakan.
+   - Intervensi yang disarankan, kompetensi/level sasaran, perkiraan biaya, tenggat, dan penanggung jawab.
+   - Rekap kebutuhan belum ditangani, kebutuhan berulang, distribusi prioritas, dan kemampuan anggaran; pisahkan saran otomatis dari kebutuhan yang disetujui.
+
+6. **Rencana Pengembangan Individu (IDP) dan pelaksanaan** — menelusuri tindak lanjut TNA/gap pada tingkat individu.
+   - Sasaran kompetensi/karier, level saat ini dan target, hubungan ke gap/TNA, aktivitas pengembangan, pemilik, tenggat, dan persetujuan.
+   - Status tiap aktivitas (direncanakan, berjalan, selesai, tertunda), bukti, sertifikasi, biaya, dan catatan pegawai/atasan.
+   - Kemajuan terhadap target, aktivitas lewat tenggat, serta gap yang belum tertangani setelah aktivitas selesai.
+   - Riwayat rencana dan perubahan untuk evaluasi lintas periode.
+
+7. **Pelatihan dan efektivitas pengembangan** — mengukur pelaksanaan serta dampaknya, bukan hanya jumlah kehadiran.
+   - Katalog/intervensi, peserta sasaran dan aktual, kehadiran/penyelesaian, penyedia, jadwal, biaya, dan kompetensi sasaran.
+   - Evaluasi empat tingkat: reaksi, pembelajaran, penerapan perilaku/kompetensi, dan dampak pada kinerja/organisasi; sertakan metode, waktu ukur, respons, dan baseline pembanding.
+   - Perubahan skor kompetensi atau indikator kinerja sebelum/sesudah dengan konteks periode dan keterbatasan atribusi.
+   - Tingkat penyelesaian, biaya per peserta, hasil evaluasi, dan rekomendasi lanjut/perbaiki/hentikan program.
+
+8. **Performance Management** — memperlihatkan sasaran, proses, hasil, dan tindak lanjut kinerja.
+   - Periode dan tahap siklus, kebijakan/versi skala, sasaran/KPI dan bobot, alignment organisasi, target, realisasi, serta bukti.
+   - Status rencana, check-in, penilaian diri/atasan/review, What/How/Kontribusi, hasil kalibrasi, rating final/provisional, dan alasan penyesuaian sesuai izin.
+   - Distribusi rating per unit/jabatan/periode, tren, progres tahap, karyawan not rated, keberatan, serta status PIP.
+   - Tampilkan rating final terpisah dari proyeksi atau rating sementara; ekspor harus mengikuti izin, alasan, watermark, dan audit.
+
+9. **Talent Review dan Nine Box** — menyatukan kinerja final dengan asesmen potensi yang tervalidasi.
+   - Periode/siklus, definisi sumbu dan ambang Nine Box, rating kinerja final yang dirujuk, hasil potensi, tanggal, assessor, bukti, dan tingkat keyakinan.
+   - Posisi pegawai dalam kotak, catatan/justifikasi panel, kalibrasi, keputusan, serta riwayat perpindahan antar-siklus.
+   - Tindak lanjut pengembangan, penanggung jawab, tanggal tinjau ulang, dan status validasi data.
+   - Ringkasan distribusi per unit/kelompok jabatan dan cakupan review; jangan tampilkan potensi individu tanpa izin khusus.
+
+10. **Talent Pool** — memantau kelompok talenta dan kesiapan pengembangannya.
+    - Nama/tujuan pool, kriteria masuk/keluar, periode, nominasi, status persetujuan, tanggal tinjau ulang, dan pemilik pool.
+    - Anggota, sumber keputusan (talent review), posisi/keluarga jabatan sasaran, tingkat kesiapan, minat karier, dan kompetensi/gap utama.
+    - IDP/intervensi, kemajuan, risiko kehilangan/retensi bila dikelola kebijakan, serta riwayat perubahan status.
+    - Rekap komposisi, kesiapan, gap, pergerakan, dan cakupan; keanggotaan bukan jaminan promosi dan akses baris individu dibatasi.
+
+11. **Succession dan bench strength** — menguji cakupan kandidat untuk posisi kritis.
+    - Posisi kritis, tingkat dampak, incumbent, risiko kekosongan, dan status rencana suksesi.
+    - Kandidat suksesor utama/cadangan, kesiapan dan horizon waktunya, sumber (termasuk pool/readiness), persetujuan, dan tanggal pembaruan.
+    - Gap kompetensi, tindakan pengembangan, dependensi kandidat pada beberapa posisi, dan posisi tanpa kandidat siap.
+    - Cakupan suksesi, bench strength, posisi berisiko, dan tindak lanjut; keputusan suksesi tetap memerlukan persetujuan berwenang.
+
+12. **People Analytics CBHRM lintas modul** — ringkasan eksekutif untuk melihat hubungan dan tren tanpa menggantikan laporan rinci.
+    - Indikator cakupan profil/asesmen, gap kritis, kebutuhan TNA terbuka, kemajuan IDP, efektivitas pelatihan, hasil kinerja, talent pool, dan cakupan suksesi.
+    - Tren antarperiode dan per unit/kelompok jabatan dengan definisi, sumber, waktu snapshot, serta aturan pengecualian yang konsisten.
+    - Drill-through ke laporan sumber hanya bagi pengguna yang berhak; sembunyikan agregat kurang dari lima orang dan catat akses/ekspor.
+    - Hindari menyimpulkan sebab-akibat hanya dari korelasi antara pelatihan, kompetensi, rating, dan promosi.
+
+Fitur AI rekomendasi (draf IDP, saran pelatihan, ringkasan check-in) memakai `RagService`/Gemini dengan pseudonimisasi dan log versi model + prompt, sebagai bantuan penyusunan rekomendasi yang tetap ditinjau manusia.
 
 ### Rilis 3 — P2 (+20–26 minggu)
 Recruitment & Onboarding → Attendance & Leave (integrasi mesin absensi via API, cuti, lembur, shift) → Compensation Planning & payroll API (outbound/inbound, idempotency, retry, rekonsiliasi batch) → Workforce Planning → integrasi ERP.

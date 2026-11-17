@@ -38,6 +38,8 @@ class DatabaseSeeder extends Seeder
             unit_typeSeeder::class,
             CorporateSeeder::class,
             unitSeeder::class,
+            // DemoDataSeeder sengaja TIDAK dipanggil di sini: ia membuat akun demo bersandi seragam.
+            // Jalankan hanya di lingkungan dev/demo: php artisan db:seed --class=DemoDataSeeder
         ]);
 
         Schema::enableForeignKeyConstraints();

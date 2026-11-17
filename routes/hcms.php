@@ -16,6 +16,8 @@ Route::resource('organization/jobs', 'Organization\JobsController')->except('sho
 Route::resource('organization/positions', 'Organization\PositionsController')->except('show')->parameters(['positions' => 'id']);
 
 // Employee Management
+Route::get('executive/dashboard', 'ExecutiveDashboardController@index');
+Route::get('executive/analytics/{report}', 'ExecutiveAnalyticsController@show')->where('report', 'turnover|promotions|deib|workforce|development');
 Route::get('employees/export', 'Employee\EmployeesController@export')->middleware('throttle:10,1,export');
 Route::resource('employees', 'Employee\EmployeesController')->parameters(['employees' => 'id'])->whereNumber('id');
 Route::post('employees/{id}/identity', 'Employee\EmployeesController@revealIdentity')->whereNumber('id')->middleware('throttle:20,1,identity');
@@ -96,7 +98,8 @@ Route::post('performance/appeals/{appeal}/decide', 'Performance\RatingsControlle
 Route::get('performance/pips', 'Performance\PipController@index');
 Route::post('performance/pips', 'Performance\PipController@store');
 Route::post('performance/pips/{pip}/close', 'Performance\PipController@close')->whereNumber('pip');
-Route::get('performance/dashboard', 'Performance\DashboardController@index');
+Route::get('executive/analytic/performance', 'Performance\DashboardController@index');
+Route::redirect('performance/dashboard', '/executive/analytic/performance', 302);
 
 Route::get('competency/reports','Competency\ReportsController@index');
 Route::get('competency/reports/employees/{employee}', 'Competency\ReportsController@employee')->whereNumber('employee');

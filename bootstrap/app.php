@@ -38,6 +38,7 @@ return Application::configure(dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->redirectGuestsTo(fn () => url('user/login'));
+        $middleware->append(\App\Http\Middleware\NormalizeExecutiveDashboardPath::class);
         $middleware->append(\App\Http\Middleware\Cors::class);
 
         // Tenant aktif diisi sesudah sesi & auth tersedia (grup web)

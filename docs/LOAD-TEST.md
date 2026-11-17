@@ -42,6 +42,20 @@ DB_DATABASE=hcms_load php artisan hcms:load-seed --employees=10000 --users=1000
 
 Semua 20 skenario kini **p95 < 1 detik** (hasil lengkap lokal: `storage/app/benchmark/latest.md` & `baseline.md`, tidak masuk git — tabel di atas adalah catatannya). Variasi ±100 ms antar-run adalah derau mesin dev.
 
+Dashboard Executive (ditambahkan kemudian, diukur dengan data yang sama):
+
+| Halaman | Sebelum p95 | Sesudah p95 |
+|---|---:|---:|
+| Ringkasan Eksekutif | **1.415 ms** ❌ | 873 ms |
+| Demografi tenaga kerja | **1.142 ms** ❌ | 783 ms |
+| Turnover, DEIB, Mobilitas, Pengembangan | ≤ 585 ms | ≤ 496 ms |
+
+Perbaikan: penempatan per unit dihitung dengan JOIN (bukan `IN`-subquery) dan pegawai per unit + keterisian posisi digabung dalam satu agregasi bersyarat.
+
+Versi infografis (tren 12 bulan, cincin keterisian, donut, sorotan) menambah query tren dan sempat naik ke **1.158 ms** ❌. Setelah status kerja pegawai tanpa riwayat dihitung langsung dari `employees` (subquery riwayat hanya untuk yang punya riwayat) dan headcount bulan lalu diambil dari titik tren (cakupan "semua"), Ringkasan Eksekutif kembali ke **951 ms** ✅ — masih dekat batas, kandidat berikutnya bila data bertambah: cache agregat per tenant + bulan.
+
+Infografis lima laporan analitik (tren turnover 13 bulan, tren kenaikan grade 12 bulan, representasi gender per tahap) diukur setelah `hcms_load` diisi ulang: Ringkasan 564 ms, Turnover 135 ms, Mobilitas 161 ms, DEIB 120 ms, Demografi 451 ms, Pengembangan 468 ms (p95, 5 iterasi). Database yang baru diisi lebih cepat daripada run sebelumnya, jadi angka ini tidak sebanding langsung dengan tabel di atas.
+
 ### Perbaikan
 
 1. **Laporan Kompetensi** — agregasi (sebaran band, gap terbesar, heatmap) dipindah dari PHP ke SQL; daftar pegawai dipaginasi 50; heatmap dibatasi 25 unit dengan gap terburuk. Filter "posisi saat ini" diubah dari `EXISTS` + `IN` (rencana MariaDB 4× lebih lambat) menjadi `JOIN`, dan filter cakupan "semua" tidak lagi menambah subquery (`EmployeeScope::apply`). Agregat di-cache per tenant + cakupan data + unit, kunci berversi yang naik setiap gap/JFI dihitung ulang (`CompetencyAssessment::bumpReportVersion`), TTL 10 menit.

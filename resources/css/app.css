@@ -64,3 +64,128 @@
     background-color: var(--bs-btn-hover-bg);
     border-color: var(--bs-btn-hover-bg);
 }
+
+/* Ringkasan Eksekutif — infografis (resources/views/executive/dashboard.blade.php).
+   Semua selektor diawali .exec-dashboard: app.css dimuat sebelum CSS tema/Bootstrap,
+   jadi aturan tanpa wrapper kalah oleh .card dan .table dari tema.
+   --viz-*: palet kategorikal tervalidasi (validate_palette.js, CVD-aman) — sama dengan resources/js/charts.js. */
+.exec-dashboard {
+    --viz-1: #2a78d6; --viz-2: #eb6834; --viz-3: #1baf7a; --viz-4: #eda100; --viz-5: #e87ba4; --viz-neutral: #a3a29b;
+    --exec-up: #0b7a55; --exec-down: #c2283a;
+}
+body.dark-theme .exec-dashboard, [data-bs-theme="dark"] .exec-dashboard {
+    --viz-1: #3987e5; --viz-2: #d95926; --viz-3: #199e70; --viz-4: #c98500; --viz-5: #d55181; --viz-neutral: #6c6b65;
+    --exec-up: #34c38f; --exec-down: #f17080;
+}
+
+.exec-dashboard .exec-card { border: 1px solid var(--sx-line); border-radius: 14px; box-shadow: var(--sx-shadow); overflow: hidden; }
+.exec-dashboard .exec-section-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.exec-dashboard .exec-section-title { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 1rem; font-weight: 600; color: var(--sx-title); }
+.exec-dashboard .exec-icon-box { width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.exec-dashboard .exec-tone-primary { background: var(--sx-primary-soft); color: var(--sx-primary-strong); }
+.exec-dashboard .exec-tone-success { background: var(--sx-on-bg); color: var(--sx-on-fg); }
+.exec-dashboard .exec-tone-warning { background: var(--sx-off-bg); color: var(--sx-off-fg); }
+.exec-dashboard .exec-tone-danger { background: var(--sx-no-bg); color: var(--sx-no-fg); }
+.exec-dashboard .exec-tone-info { background: var(--sx-info-bg); color: var(--sx-info-fg); }
+.exec-dashboard .exec-tone-neutral { background: var(--sx-raised); color: var(--sx-muted); border: 1px solid var(--sx-line); }
+.exec-dashboard .exec-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
+.exec-dashboard .tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* Hero: angka utama besar + tiga statistik + cincin keterisian */
+.exec-dashboard .exec-hero {
+    display: grid; grid-template-columns: minmax(220px, 1.1fr) minmax(0, 2fr) minmax(230px, 1.2fr); gap: 0;
+    border: 1px solid var(--sx-line); border-radius: 18px; overflow: hidden; box-shadow: var(--sx-shadow);
+    background: linear-gradient(135deg, var(--sx-primary-soft) 0%, var(--sx-surface) 55%);
+}
+.exec-dashboard .exec-hero > * { padding: 22px 24px; }
+.exec-dashboard .exec-hero > * + * { border-left: 1px solid var(--sx-line-soft); }
+.exec-dashboard .exec-hero-kicker { font-size: 12.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--sx-primary-strong); }
+.exec-dashboard .exec-hero-number { font-size: clamp(2.6rem, 5vw, 3.6rem); font-weight: 700; line-height: 1.05; color: var(--sx-title); margin: 6px 0 8px; letter-spacing: -0.02em; }
+.exec-dashboard .exec-hero-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12.5px; color: var(--sx-muted); }
+.exec-dashboard .exec-delta { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-weight: 600; background: var(--sx-raised); color: var(--sx-title); border: 1px solid var(--sx-line); }
+.exec-dashboard .exec-delta-up { color: var(--exec-up); }
+.exec-dashboard .exec-delta-down { color: var(--exec-down); }
+.exec-dashboard .exec-hero-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; padding: 0; }
+.exec-dashboard .exec-hero-stat { padding: 22px 20px; }
+.exec-dashboard .exec-hero-stat + .exec-hero-stat { border-left: 1px dashed var(--sx-line); }
+.exec-dashboard .exec-hero-stat-label { font-size: 12.5px; font-weight: 600; color: var(--sx-muted); display: flex; align-items: center; gap: 6px; }
+.exec-dashboard .exec-hero-stat-value { font-size: 1.9rem; font-weight: 700; color: var(--sx-title); margin: 6px 0 2px; line-height: 1.1; }
+.exec-dashboard .exec-hero-stat-note { font-size: 12px; color: var(--sx-muted); }
+.exec-dashboard .exec-hero-ring { display: flex; align-items: center; gap: 16px; }
+.exec-dashboard .exec-ring-wrap { position: relative; width: 104px; height: 104px; flex-shrink: 0; }
+.exec-dashboard .exec-ring-chart { width: 104px; height: 104px; }
+.exec-dashboard .exec-ring-center, .exec-dashboard .exec-donut-center {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;
+}
+.exec-dashboard .exec-ring-center span { font-size: 1.35rem; font-weight: 700; color: var(--sx-title); line-height: 1; }
+.exec-dashboard .exec-ring-center small, .exec-dashboard .exec-donut-center small { font-size: 11px; color: var(--sx-muted); margin-top: 3px; }
+.exec-dashboard .exec-open-chip { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--sx-off-bg); color: var(--sx-off-fg); }
+
+/* Donut + legenda bernilai (identitas tidak bergantung warna saja) */
+.exec-dashboard .exec-donut { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px 18px; }
+.exec-dashboard .exec-donut-chart { position: relative; width: 168px; flex-shrink: 0; }
+.exec-dashboard .exec-donut-center span { font-size: 1.5rem; font-weight: 700; color: var(--sx-title); line-height: 1; }
+.exec-dashboard .exec-legend { list-style: none; padding: 0; margin: 0; flex: 1 1 170px; min-width: 0; }
+.exec-dashboard .exec-legend li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 6px 0; font-size: 13px; }
+.exec-dashboard .exec-legend li + li { border-top: 1px dashed var(--sx-line-soft); }
+.exec-dashboard .exec-swatch { width: 12px; height: 12px; border-radius: 4px; }
+.exec-dashboard .exec-legend-label { color: var(--sx-title); line-height: 1.3; }
+.exec-dashboard .exec-legend-value { font-weight: 600; color: var(--sx-title); }
+.exec-dashboard .exec-legend-pct { color: var(--sx-muted); font-size: 12px; min-width: 44px; text-align: right; }
+
+/* Sorotan */
+.exec-dashboard .exec-insights { list-style: none; padding: 0; margin: 0; }
+.exec-dashboard .exec-insights li { display: flex; gap: 12px; padding: 10px 0; }
+.exec-dashboard .exec-insights li + li { border-top: 1px dashed var(--sx-line-soft); }
+.exec-dashboard .exec-insight-icon { width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--sx-raised); border: 1px solid var(--sx-line); color: var(--sx-primary-strong); font-size: 13px; }
+.exec-dashboard .exec-insight-label { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--sx-muted); }
+.exec-dashboard .exec-insight-text { font-size: 13.5px; color: var(--sx-title); line-height: 1.45; }
+
+/* Tabel rincian (tampilan tabel aksesibel) */
+.exec-dashboard .exec-details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--sx-primary-strong); }
+.exec-dashboard .exec-table-scroll { max-height: 320px; overflow-y: auto; border: 1px solid var(--sx-line-soft); border-radius: 10px; }
+.exec-dashboard .exec-table th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--sx-muted); font-weight: 600; padding: 9px 12px;
+    background: var(--sx-raised); border-bottom: 1px solid var(--sx-line); position: sticky; top: 0; }
+.exec-dashboard .exec-table td { padding: 9px 12px; vertical-align: middle; border-bottom: 1px solid var(--sx-line-soft); font-size: 13px; }
+.exec-dashboard .exec-table tbody tr:last-child td { border-bottom: 0; }
+.exec-dashboard .exec-table tbody tr:hover td { background: var(--sx-hover); }
+.exec-dashboard .exec-unit-search { max-width: 240px; }
+.exec-dashboard .exec-filter-empty { display: none; }
+.exec-dashboard .exec-empty-state { padding: 28px 16px; text-align: center; background: var(--sx-raised); border: 1px dashed var(--sx-line); border-radius: 12px; color: var(--sx-muted); }
+.exec-dashboard .exec-footnote { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--sx-muted); margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--sx-line-soft); }
+
+@media (max-width: 1199.98px) {
+    .exec-dashboard .exec-hero { grid-template-columns: 1fr 1fr; }
+    .exec-dashboard .exec-hero-stats { grid-column: 1 / -1; grid-row: 2; border-left: 0; border-top: 1px solid var(--sx-line-soft); }
+}
+@media (max-width: 767.98px) {
+    .exec-dashboard .exec-hero { grid-template-columns: 1fr; }
+    .exec-dashboard .exec-hero > * + * { border-left: 0; border-top: 1px solid var(--sx-line-soft); }
+    .exec-dashboard .exec-hero-stats { grid-template-columns: 1fr 1fr 1fr; grid-row: auto; }
+    .exec-dashboard .exec-hero-stat { padding: 16px 12px; }
+    .exec-dashboard .exec-hero-stat-value { font-size: 1.5rem; }
+    .exec-dashboard .exec-donut { flex-direction: column; align-items: stretch; }
+    .exec-dashboard .exec-donut-chart { margin: 0 auto; }
+}
+
+/* Laporan analitik SDM (resources/views/executive/analytics.blade.php) */
+.exec-dashboard .exec-hero-plain { grid-template-columns: minmax(220px, 1.1fr) minmax(0, 3fr); }
+.exec-dashboard .exec-paths, .exec-dashboard .exec-gaps { list-style: none; padding: 0; margin: 0; }
+.exec-dashboard .exec-paths li { display: grid; grid-template-columns: minmax(0, auto) minmax(60px, 1fr) 36px; align-items: center; gap: 12px; padding: 8px 0; }
+.exec-dashboard .exec-paths li + li, .exec-dashboard .exec-gaps li + li { border-top: 1px dashed var(--sx-line-soft); }
+.exec-dashboard .exec-paths strong { text-align: right; color: var(--sx-title); }
+.exec-dashboard .exec-path-grades { display: flex; align-items: center; gap: 6px; color: var(--sx-muted); min-width: 0; }
+.exec-dashboard .exec-path-bar { height: 8px; border-radius: 4px; background: var(--sx-line-soft); overflow: hidden; }
+.exec-dashboard .exec-path-bar span { display: block; height: 100%; border-radius: 4px; background: var(--viz-1); }
+.exec-dashboard .exec-gaps li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; font-size: 13px; }
+.exec-dashboard .min-w-0 { min-width: 0; }
+.exec-dashboard .exec-page-note { margin-top: 18px; }
+@media (max-width: 1199.98px) {
+    .exec-dashboard .exec-hero-plain { grid-template-columns: 1fr; }
+    .exec-dashboard .exec-hero-plain .exec-hero-stats { grid-row: auto; }
+}
+@media (max-width: 575.98px) {
+    .exec-dashboard .exec-paths li { grid-template-columns: minmax(0, 1fr) 36px; }
+    .exec-dashboard .exec-path-bar { display: none; }
+}
